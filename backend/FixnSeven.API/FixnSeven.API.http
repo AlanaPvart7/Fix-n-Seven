@@ -1,6 +1,28 @@
-@FixnSeven.API_HostAddress = http://localhost:5093
+@api = http://localhost:5093/api
 
-GET {{FixnSeven.API_HostAddress}}/weatherforecast/
+### 1. Listar clientes (200)
+GET {{api}}/customers?page=1&pageSize=20
 Accept: application/json
 
-###
+### 2. Crear cliente (201)
+POST {{api}}/customers
+Content-Type: application/json
+
+{
+  "fullName": "María López",
+  "phone": "9999-0000",
+  "email": "maria@correo.com"
+}
+
+### 3. Crear cliente sin nombre (400)
+POST {{api}}/customers
+Content-Type: application/json
+
+{
+  "fullName": "",
+  "phone": "9999-0000"
+}
+
+### 4. Buscar por nombre o teléfono (200)
+GET {{api}}/customers?search=María
+Accept: application/json

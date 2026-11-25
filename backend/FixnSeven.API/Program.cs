@@ -1,5 +1,6 @@
 using DotNetEnv;
 using FixnSeven.Infrastructure;
+using Scalar.AspNetCore;
 
 Env.Load();   // lee FixnSeven.API/.env
 
@@ -15,7 +16,10 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
-    app.MapOpenApi();
+{
+    app.MapOpenApi();               // genera el contrato JSON de la API
+    app.MapScalarApiReference();    // interfaz visual en /scalar/v1
+}
 
 app.MapControllers();
 app.Run();
