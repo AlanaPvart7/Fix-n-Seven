@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="FixnSeven.API/FixnSeven.API.csproj" />
+  <Project Path="FixnSeven.Application/FixnSeven.Application.csproj" />
+  <Project Path="FixnSeven.Domain/FixnSeven.Domain.csproj" />
+  <Project Path="FixnSeven.Infrastructure/FixnSeven.Infrastructure.csproj" />
+</Solution>
