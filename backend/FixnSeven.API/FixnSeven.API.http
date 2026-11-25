@@ -1,11 +1,75 @@
 @api = http://localhost:5093/api
 
+### A1. Registrar empresa + primer Admin (201) — HU-01
+# @name registro
+POST {{api}}/enterprises/register
+Content-Type: application/json
+
+{
+  "enterpriseName": "Taller El Rapido",
+  "enterpriseTypeId": "0192f000-0000-7000-8000-000000000101",
+  "planId": "0192f000-0000-7000-8000-000000000201",
+  "adminFullName": "Alana Admin",
+  "adminEmail": "admin@elrapido.com",
+  "password": "Admin1234"
+}
+
+### A2. Registrar con el mismo correo (409)
+POST {{api}}/enterprises/register
+Content-Type: application/json
+
+{
+  "enterpriseName": "Otro taller",
+  "enterpriseTypeId": "0192f000-0000-7000-8000-000000000101",
+  "planId": "0192f000-0000-7000-8000-000000000201",
+  "adminFullName": "Otra persona",
+  "adminEmail": "admin@elrapido.com",
+  "password": "Admin1234"
+}
+
+### A3. Registrar con contraseña débil (400)
+POST {{api}}/enterprises/register
+Content-Type: application/json
+
+{
+  "enterpriseName": "Taller X",
+  "enterpriseTypeId": "0192f000-0000-7000-8000-000000000101",
+  "planId": "0192f000-0000-7000-8000-000000000201",
+  "adminFullName": "X",
+  "adminEmail": "x@x.com",
+  "password": "123"
+}
+
+### A4. Login correcto (200) — HU-02. Las peticiones de clientes usan este token.
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@elrapido.com",
+  "password": "Admin1234"
+}
+
+### A5. Login con contraseña incorrecta (401)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@elrapido.com",
+  "password": "Incorrecta1"
+}
+
+### A6. Clientes SIN token (401)
+GET {{api}}/customers
+
 ### 1. Listar clientes (200)
 GET {{api}}/customers?page=1&pageSize=20
+Authorization: Bearer {{login.response.body.token}}
 Accept: application/json
 
 ### 2. Crear cliente (201)
 POST {{api}}/customers
+Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
 {
@@ -16,6 +80,7 @@ Content-Type: application/json
 
 ### 3. Crear cliente sin nombre (400)
 POST {{api}}/customers
+Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
 {
@@ -25,11 +90,13 @@ Content-Type: application/json
 
 ### 4. Buscar por nombre o teléfono (200)
 GET {{api}}/customers?search=María
+Authorization: Bearer {{login.response.body.token}}
 Accept: application/json
 
 ### 5. Crear otro cliente y guardar su id (201)
 # @name crear
 POST {{api}}/customers
+Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
 {
@@ -40,12 +107,15 @@ Content-Type: application/json
 
 ### 6. Consultar por Id (200)
 GET {{api}}/customers/{{crear.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
 
 ### 7. Consultar un Id que no existe (404)
 GET {{api}}/customers/0192f000-0000-7000-8000-000000000999
+Authorization: Bearer {{login.response.body.token}}
 
 ### 8. Editar el cliente (204)
 PUT {{api}}/customers/{{crear.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
 {
@@ -56,6 +126,7 @@ Content-Type: application/json
 
 ### 9. Editar con correo inválido (400)
 PUT {{api}}/customers/{{crear.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
 {

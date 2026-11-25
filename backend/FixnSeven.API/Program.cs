@@ -1,4 +1,9 @@
+using System.Text;
 using DotNetEnv;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using FixnSeven.API.Security;
+using FixnSeven.Application.Common.Interfaces;
 using FixnSeven.Infrastructure;
 using Scalar.AspNetCore;
 using FixnSeven.Application;
@@ -12,6 +17,28 @@ var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Po
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(connectionString);   // base de datos + repositorios
+// JWT: valida el token que manda el frontend en cada peticion
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("Falta Jwt__Key en el .env");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "FixnSeven";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = jwtIssuer,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddSingleton<ITokenService, JwtTokenService>();
+
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
@@ -22,6 +49,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();               // genera el contrato JSON de la API
     app.MapScalarApiReference();    // interfaz visual en /scalar/v1
 }
+
+app.UseAuthentication();   // 1. quien eres (lee el token)
+app.UseAuthorization();    // 2. que puedes hacer (roles)
 
 app.MapControllers();
 app.Run();

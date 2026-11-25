@@ -11,6 +11,7 @@ public class FixnSevenDbContext : DbContext
     public DbSet<RoleEmployee> RoleEmployees => Set<RoleEmployee>();
     public DbSet<Enterprise> Enterprises => Set<Enterprise>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Employee> Employees => Set<Employee>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

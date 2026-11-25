@@ -51,6 +51,47 @@ namespace FixnSeven.Infrastructure.Migrations
                     b.ToTable("Customers");
                 });
 
+            modelBuilder.Entity("FixnSeven.Domain.Entities.Employee", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("RoleEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("EnterpriseId", "Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("RoleEmployeeId");
+
+                    b.ToTable("Employees");
+                });
+
             modelBuilder.Entity("FixnSeven.Domain.Entities.Enterprise", b =>
                 {
                     b.Property<Guid>("Id")
@@ -229,6 +270,21 @@ namespace FixnSeven.Infrastructure.Migrations
                     b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
                         .WithMany()
                         .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.Employee", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.RoleEmployee", null)
+                        .WithMany()
+                        .HasForeignKey("RoleEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

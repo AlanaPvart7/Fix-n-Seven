@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FixnSeven.Application.Common.DTOs;
 using FixnSeven.Application.Features.Customers;
@@ -9,6 +10,7 @@ namespace FixnSeven.API.Controllers;
 
 [ApiController]
 [Route("api/customers")]
+[Authorize(Roles = "Admin,Reception")]   // sin token: 401, rol Technician: 403
 public class CustomersController : ControllerBase
 {
     // TEMPORAL: en el paso 8 sale del token JWT.
