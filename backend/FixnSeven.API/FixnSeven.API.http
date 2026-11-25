@@ -26,3 +26,40 @@ Content-Type: application/json
 ### 4. Buscar por nombre o teléfono (200)
 GET {{api}}/customers?search=María
 Accept: application/json
+
+### 5. Crear otro cliente y guardar su id (201)
+# @name crear
+POST {{api}}/customers
+Content-Type: application/json
+
+{
+  "fullName": "Carlos Mejía",
+  "phone": "8888-1111",
+  "email": "carlos@correo.com"
+}
+
+### 6. Consultar por Id (200)
+GET {{api}}/customers/{{crear.response.body.id}}
+
+### 7. Consultar un Id que no existe (404)
+GET {{api}}/customers/0192f000-0000-7000-8000-000000000999
+
+### 8. Editar el cliente (204)
+PUT {{api}}/customers/{{crear.response.body.id}}
+Content-Type: application/json
+
+{
+  "fullName": "Carlos Mejía Rodríguez",
+  "phone": "8888-2222",
+  "email": "carlos@correo.com"
+}
+
+### 9. Editar con correo inválido (400)
+PUT {{api}}/customers/{{crear.response.body.id}}
+Content-Type: application/json
+
+{
+  "fullName": "Carlos",
+  "phone": "8888-2222",
+  "email": "esto-no-es-correo"
+}
