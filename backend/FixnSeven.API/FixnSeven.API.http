@@ -168,3 +168,104 @@ Authorization: Bearer {{login2.response.body.token}}
 ### B3. La empresa 2 pide un cliente de la empresa 1 por su Id (404)
 GET {{api}}/customers/{{crear.response.body.id}}
 Authorization: Bearer {{login2.response.body.token}}
+
+### ===== CATALOGOS (publicos, sin token) =====
+
+### C1. Tipos de empresa (200)
+GET {{api}}/enterprise-types
+
+### C2. Planes (200)
+GET {{api}}/plans
+
+### C3. Mi empresa, solo Admin (200) — usa el token de la A4
+GET {{api}}/enterprises/me
+Authorization: Bearer {{login.response.body.token}}
+
+### ===== HU-03: EMPLEADOS (ejecutar despues de la A4) =====
+
+### E1. El Admin crea una recepcionista (201)
+POST {{api}}/employees
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "fullName": "Rosa Recepción",
+  "email": "rosa@elrapido.com",
+  "password": "Recepcion1",
+  "role": "Reception"
+}
+
+### E2. El Admin crea un técnico (201)
+# @name tecnico
+POST {{api}}/employees
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "fullName": "Tomás Técnico",
+  "email": "tomas@elrapido.com",
+  "password": "Tecnico123",
+  "role": "Technician"
+}
+
+### E3. Correo repetido (409)
+POST {{api}}/employees
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "fullName": "Otro Tomás",
+  "email": "tomas@elrapido.com",
+  "password": "Tecnico123",
+  "role": "Technician"
+}
+
+### E4. Rol que no existe (400)
+POST {{api}}/employees
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "fullName": "Jefe",
+  "email": "jefe@elrapido.com",
+  "password": "Jefe12345",
+  "role": "Jefe"
+}
+
+### E5. Listar empleados (200)
+GET {{api}}/employees
+Authorization: Bearer {{login.response.body.token}}
+
+### E6. Solo técnicos, para asignar órdenes (200)
+GET {{api}}/employees?role=Technician
+Authorization: Bearer {{login.response.body.token}}
+
+### E7. Empleado por Id (200)
+GET {{api}}/employees/{{tecnico.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### E8. Login del técnico (200)
+# @name loginTec
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "tomas@elrapido.com",
+  "password": "Tecnico123"
+}
+
+### E9. El técnico intenta crear un empleado (403)
+POST {{api}}/employees
+Authorization: Bearer {{loginTec.response.body.token}}
+Content-Type: application/json
+
+{
+  "fullName": "Intruso",
+  "email": "intruso@elrapido.com",
+  "password": "Intruso123",
+  "role": "Admin"
+}
+
+### E10. El técnico intenta ver clientes (403)
+GET {{api}}/customers
+Authorization: Bearer {{loginTec.response.body.token}}

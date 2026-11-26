@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using FixnSeven.Application.Common.Interfaces;
 using FixnSeven.Application.Features.Auth;
 using FixnSeven.Application.Features.Customers;
+using FixnSeven.Application.Features.Employees;
+using FixnSeven.Application.Features.Enterprises;
 using FixnSeven.Infrastructure.Data;
 using FixnSeven.Infrastructure.Repositories;
 using FixnSeven.Infrastructure.Security;
@@ -19,6 +21,8 @@ public static class DependencyInjection
         // 2. "Cuando alguien pida ICustomerRepository, entrégale CustomerRepository"
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IAuthRepository, AuthRepository>();
+        services.AddScoped<ICatalogRepository, CatalogRepository>();
+        services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
         // 3. Seguridad: contrasenas con BCrypt
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();

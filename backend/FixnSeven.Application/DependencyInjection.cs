@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using FixnSeven.Application.Features.Auth;
+using FixnSeven.Application.Features.Employees;
 
 namespace FixnSeven.Application;
 
@@ -13,6 +14,7 @@ public static class DependencyInjection
 
         // Servicios con reglas de negocio
         services.AddScoped<AuthService>();
+        services.AddScoped<EmployeeService>();
         return services;
     }
 }
