@@ -34,4 +34,11 @@ public class LocalFileStorage : IFileStorage
         var path = PathFor(key);
         return Task.FromResult<Stream?>(File.Exists(path) ? File.OpenRead(path) : null);
     }
+
+    public Task DeleteAsync(string key)
+    {
+        var path = PathFor(key);
+        if (File.Exists(path)) File.Delete(path);
+        return Task.CompletedTask;
+    }
 }

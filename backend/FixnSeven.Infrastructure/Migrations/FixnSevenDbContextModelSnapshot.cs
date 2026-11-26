@@ -53,6 +53,9 @@ namespace FixnSeven.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<DateTime?>("OwnerCodeUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PublicSummary")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -169,6 +172,158 @@ namespace FixnSeven.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.CustomerAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<int>("FailedLinkAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTime?>("LinkLockedUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("CustomerAccounts");
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.CustomerDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Accessories")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Alias")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<Guid>("CustomerAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EquipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("LinkedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PrivateNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("PublicDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateOnly?>("PurchaseDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("ShowInPublicView")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<string>("TransferCodeHash")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("TransferExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerAccountId");
+
+                    b.HasIndex("EquipmentId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Activo'");
+
+                    b.ToTable("CustomerDevices", t =>
+                        {
+                            t.HasCheckConstraint("CK_CustomerDevices_Status", "\"Status\" IN ('Activo','Transferido')");
+                        });
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.CustomerDeviceFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("CustomerDeviceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FileKind")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerDeviceId");
+
+                    b.ToTable("CustomerDeviceFiles", t =>
+                        {
+                            t.HasCheckConstraint("CK_CustomerDeviceFiles_Kind", "\"FileKind\" IN ('Foto','PDF')");
+
+                            t.HasCheckConstraint("CK_CustomerDeviceFiles_PublicPhoto", "NOT \"IsPublic\" OR \"FileKind\" = 'Foto'");
+                        });
                 });
 
             modelBuilder.Entity("FixnSeven.Domain.Entities.Employee", b =>
@@ -846,6 +1001,30 @@ namespace FixnSeven.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("EnterpriseId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.CustomerDevice", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.CustomerAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.CustomerDeviceFile", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.CustomerDevice", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerDeviceId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

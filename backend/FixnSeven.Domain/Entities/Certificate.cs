@@ -43,6 +43,7 @@ public class Certificate : TenantEntity
     public string Status { get; set; } = CertificateStatus.Active;
     public string VerificationCode { get; set; } = string.Empty;   // va en el QR
     public string OwnerCodeHash { get; set; } = string.Empty;      // huella del codigo privado del dueno
+    public DateTime? OwnerCodeUsedAt { get; set; }                 // el codigo del dueno es de UN solo uso
     public DateTime IssuedAt { get; set; } = DateTime.UtcNow;
     public DateTime ExpiresAt { get; set; }
     public DateTime? RevokedAt { get; set; }

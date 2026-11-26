@@ -93,7 +93,7 @@ public class CertificateRepository : ICertificateRepository
             {
                 c.VerificationCode, c.Grade, c.Score, c.Status, c.IssuedAt, c.ExpiresAt, c.RevokedAt, c.PublicSummary,
                 WorkshopName = en.Name, TechnicianName = t.FullName,
-                EquipmentType = cat.Name, q.Brand, q.Model, q.Identifier
+                EquipmentType = cat.Name, q.Brand, q.Model, q.Identifier, EquipmentId = q.Id
             }).AsNoTracking().FirstOrDefaultAsync();
 
         if (row is null) return null;
@@ -102,10 +102,23 @@ public class CertificateRepository : ICertificateRepository
             : row.ExpiresAt < DateTime.UtcNow ? CertificateStatus.Expired
             : CertificateStatus.Active;
 
+        // Informacion que el dueno decidio compartir (Fase 2). Nunca su nombre ni contacto.
+        PublicOwnerInfoResponseDto? ownerInfo = null;
+        var owner = await _context.CustomerDevices.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.EquipmentId == row.EquipmentId && d.Status == DeviceStatus.Active && d.ShowInPublicView);
+        if (owner is not null)
+        {
+            var photoIds = await _context.CustomerDeviceFiles
+                .Where(f => f.CustomerDeviceId == owner.Id && f.IsPublic && f.FileKind == FileKinds.Photo)
+                .OrderBy(f => f.UploadedAt).Select(f => f.Id).ToListAsync();
+            ownerInfo = new PublicOwnerInfoResponseDto(owner.PurchaseDate, owner.Accessories, owner.PublicDescription,
+                photoIds.Select(id => $"/api/public/device-files/{id}").ToList());
+        }
+
         return new PublicCertificateResponseDto(
             row.VerificationCode, row.WorkshopName, row.TechnicianName, row.EquipmentType,
             row.Brand, row.Model, CertificateMapper.Mask(row.Identifier),
             row.Grade, row.Score, status, row.IssuedAt, row.ExpiresAt, row.RevokedAt,
-            row.PublicSummary, null, CertificateMapper.Disclaimer);
+            row.PublicSummary, ownerInfo, CertificateMapper.Disclaimer);
     }
 }

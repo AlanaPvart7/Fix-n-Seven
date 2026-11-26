@@ -12,6 +12,7 @@ using FixnSeven.Application.Features.Reminders;
 using FixnSeven.Application.Features.Settings;
 using FixnSeven.Application.Features.Income;
 using FixnSeven.Application.Features.Reports;
+using FixnSeven.Application.Features.CustomerDevices;
 using FixnSeven.Application.Features.Enterprises;
 using FixnSeven.Infrastructure.Data;
 using FixnSeven.Infrastructure.Pdf;
@@ -42,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<ISettingsRepository, SettingsRepository>();
         services.AddScoped<IIncomeRepository, IncomeRepository>();
         services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<ICustomerAccountRepository, CustomerAccountRepository>();
 
         // Archivos de prueba de los reportes: carpeta privada (no se sirve por URL)
         services.AddSingleton<IFileStorage>(new LocalFileStorage(storagePath));

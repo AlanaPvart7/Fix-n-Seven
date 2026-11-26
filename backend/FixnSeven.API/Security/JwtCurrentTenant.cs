@@ -12,5 +12,6 @@ public class JwtCurrentTenant : ICurrentTenant
 
     public Guid? EnterpriseId => ReadClaim("enterprise_id");
     public Guid? EmployeeId => ReadClaim("employee_id");
+    public Guid? CustomerAccountId => ReadClaim("customer_account_id");
     public string? Role => _accessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
 }

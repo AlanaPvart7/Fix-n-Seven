@@ -1542,3 +1542,343 @@ Content-Type: application/json
   "reporterName": "Spam",
   "reporterEmail": "spam@correo.com"
 }
+
+### ===== FASE 2 (bloque F): CUENTA DEL COMPRADOR =====
+### Necesita que el Samsung NO tenga certificado vigente (F3 emite uno nuevo y trae el ownerCode).
+### F28 bloquea 15 minutos la cuenta de Beto (5 intentos fallidos).
+
+### F0a. Login Admin (200)
+# @name fAdmin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@elrapido.com",
+  "password": "Admin1234"
+}
+
+### F0b. Login tecnico (200)
+# @name fTec
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "tomas@elrapido.com",
+  "password": "Tecnico123"
+}
+
+### F1. El Samsung (200)
+# @name fEquipo
+GET {{api}}/equipment?identifier=3567
+Authorization: Bearer {{fAdmin.response.body.token}}
+
+### F2. La orden cerrada del tecnico (200)
+# @name fOrden
+GET {{api}}/orders?status=Cerrada
+Authorization: Bearer {{fTec.response.body.token}}
+
+### F3. El tecnico emite un certificado nuevo (201, guarda el ownerCode)
+# @name fCert
+POST {{api}}/certificates
+Authorization: Bearer {{fTec.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{fEquipo.response.body.$.items[0].id}}",
+  "serviceOrderId": "{{fOrden.response.body.$.items[0].id}}",
+  "grade": "Bueno",
+  "score": 85,
+  "publicSummary": "Microfono reemplazado. Bateria al 90%."
+}
+
+### --- Cuentas ---
+
+### F4. Ana crea su cuenta (201; si ya existe, 409)
+POST {{api}}/auth/customer-register
+Content-Type: application/json
+
+{
+  "email": "ana.compradora@correo.com",
+  "password": "Compradora1",
+  "fullName": "Ana Compradora",
+  "phone": "8888-1111"
+}
+
+### F5. Mismo correo otra vez (409)
+POST {{api}}/auth/customer-register
+Content-Type: application/json
+
+{
+  "email": "ana.compradora@correo.com",
+  "password": "Compradora1",
+  "fullName": "Ana Otra Vez"
+}
+
+### F6. Contraseña debil (400)
+POST {{api}}/auth/customer-register
+Content-Type: application/json
+
+{
+  "email": "debil@correo.com",
+  "password": "123",
+  "fullName": "Debil"
+}
+
+### F7. Login de Ana (200, rol Customer)
+# @name fA
+POST {{api}}/auth/customer-login
+Content-Type: application/json
+
+{
+  "email": "ana.compradora@correo.com",
+  "password": "Compradora1"
+}
+
+### F8. Beto crea su cuenta (201; si ya existe, 409)
+POST {{api}}/auth/customer-register
+Content-Type: application/json
+
+{
+  "email": "beto.comprador@correo.com",
+  "password": "Comprador1",
+  "fullName": "Beto Comprador"
+}
+
+### F9. Login de Beto (200)
+# @name fB
+POST {{api}}/auth/customer-login
+Content-Type: application/json
+
+{
+  "email": "beto.comprador@correo.com",
+  "password": "Comprador1"
+}
+
+### F10. Un empleado intenta usar /me/devices (403)
+GET {{api}}/me/devices
+Authorization: Bearer {{fAdmin.response.body.token}}
+
+### F11. Ana intenta ver ordenes del taller (403)
+GET {{api}}/orders
+Authorization: Bearer {{fA.response.body.token}}
+
+### --- Vincular ---
+
+### F12. Codigo del dueno equivocado (400)
+POST {{api}}/me/devices
+Authorization: Bearer {{fA.response.body.token}}
+Content-Type: application/json
+
+{
+  "verificationCode": "{{fCert.response.body.verificationCode}}",
+  "code": "AAAA-BBBB-CCCC"
+}
+
+### F13. Ana vincula el Samsung con el codigo del dueno (201)
+# @name fDev
+POST {{api}}/me/devices
+Authorization: Bearer {{fA.response.body.token}}
+Content-Type: application/json
+
+{
+  "verificationCode": "{{fCert.response.body.verificationCode}}",
+  "code": "{{fCert.response.body.ownerCode}}"
+}
+
+### F14. Beto intenta usar el MISMO codigo del dueno (400: es de un solo uso)
+POST {{api}}/me/devices
+Authorization: Bearer {{fB.response.body.token}}
+Content-Type: application/json
+
+{
+  "verificationCode": "{{fCert.response.body.verificationCode}}",
+  "code": "{{fCert.response.body.ownerCode}}"
+}
+
+### F15. Mis equipos de Ana (200: 1)
+GET {{api}}/me/devices
+Authorization: Bearer {{fA.response.body.token}}
+
+### F16. Beto pide el equipo de Ana (404)
+GET {{api}}/me/devices/{{fDev.response.body.id}}
+Authorization: Bearer {{fB.response.body.token}}
+
+### --- Informacion adicional ---
+
+### F17. Ana agrega datos y los comparte (200 con advertencia)
+PUT {{api}}/me/devices/{{fDev.response.body.id}}
+Authorization: Bearer {{fA.response.body.token}}
+Content-Type: application/json
+
+{
+  "alias": "Mi Samsung",
+  "purchaseDate": "2025-06-15",
+  "accessories": "Cargador original y caja",
+  "publicDescription": "Usado con cuidado, siempre con funda y vidrio templado.",
+  "privateNotes": "Lo compre en la tienda del centro.",
+  "showInPublicView": true
+}
+
+### F18. Fecha de compra en el futuro (400)
+PUT {{api}}/me/devices/{{fDev.response.body.id}}
+Authorization: Bearer {{fA.response.body.token}}
+Content-Type: application/json
+
+{
+  "purchaseDate": "2099-01-01",
+  "showInPublicView": false
+}
+
+### F19. Foto publica (201)
+# @name fFoto
+POST {{api}}/me/devices/{{fDev.response.body.id}}/files
+Authorization: Bearer {{fA.response.body.token}}
+Content-Type: multipart/form-data; boundary=FixBoundary
+
+--FixBoundary
+Content-Disposition: form-data; name="isPublic"
+
+true
+--FixBoundary
+Content-Disposition: form-data; name="file"; filename="foto-equipo.png"
+Content-Type: image/png
+
+< ./test-files/foto-equipo.png
+--FixBoundary--
+
+### F20. Factura PDF como publica (400: los PDF son privados)
+POST {{api}}/me/devices/{{fDev.response.body.id}}/files
+Authorization: Bearer {{fA.response.body.token}}
+Content-Type: multipart/form-data; boundary=FixBoundary
+
+--FixBoundary
+Content-Disposition: form-data; name="isPublic"
+
+true
+--FixBoundary
+Content-Disposition: form-data; name="file"; filename="factura.pdf"
+Content-Type: application/pdf
+
+< ./test-files/factura.pdf
+--FixBoundary--
+
+### F21. Factura PDF privada (201)
+# @name fPdf
+POST {{api}}/me/devices/{{fDev.response.body.id}}/files
+Authorization: Bearer {{fA.response.body.token}}
+Content-Type: multipart/form-data; boundary=FixBoundary
+
+--FixBoundary
+Content-Disposition: form-data; name="isPublic"
+
+false
+--FixBoundary
+Content-Disposition: form-data; name="file"; filename="factura.pdf"
+Content-Type: application/pdf
+
+< ./test-files/factura.pdf
+--FixBoundary--
+
+### F22. Borrar la factura (204)
+DELETE {{api}}/me/devices/{{fDev.response.body.id}}/files/{{fPdf.response.body.id}}
+Authorization: Bearer {{fA.response.body.token}}
+
+### F23. Borrarla otra vez (404)
+DELETE {{api}}/me/devices/{{fDev.response.body.id}}/files/{{fPdf.response.body.id}}
+Authorization: Bearer {{fA.response.body.token}}
+
+### F24. Consulta publica del QR: ownerInfo con descripcion y foto, SIN nombre de Ana (200)
+GET {{api}}/public/certificates/{{fCert.response.body.verificationCode}}
+
+### F25. La foto publica (200, imagen)
+GET {{api}}/public/device-files/{{fFoto.response.body.id}}
+
+### --- Transferir ---
+
+### F26. Ana genera un codigo de transferencia (201)
+# @name fTransfer
+POST {{api}}/me/devices/{{fDev.response.body.id}}/transfer
+Authorization: Bearer {{fA.response.body.token}}
+
+### F27. Beto recibe el equipo con ese codigo (201)
+# @name fDevB
+POST {{api}}/me/devices
+Authorization: Bearer {{fB.response.body.token}}
+Content-Type: application/json
+
+{
+  "verificationCode": "{{fCert.response.body.verificationCode}}",
+  "code": "{{fTransfer.response.body.transferCode}}"
+}
+
+### F28. Mis equipos de Ana: ya no esta (200: 0)
+GET {{api}}/me/devices
+Authorization: Bearer {{fA.response.body.token}}
+
+### F29. Consulta publica: Beto no compartio nada (200, ownerInfo null)
+GET {{api}}/public/certificates/{{fCert.response.body.verificationCode}}
+
+### F30. La foto de Ana ya no es publica (404)
+GET {{api}}/public/device-files/{{fFoto.response.body.id}}
+
+### --- Bloqueo por intentos fallidos (5 fallos = 15 minutos) ---
+
+### F31a. Fallo 1 (400)
+POST {{api}}/me/devices
+Authorization: Bearer {{fB.response.body.token}}
+Content-Type: application/json
+
+{
+  "verificationCode": "{{fCert.response.body.verificationCode}}",
+  "code": "MALO-0001-AAAA"
+}
+
+### F31b. Fallo 2 (400)
+POST {{api}}/me/devices
+Authorization: Bearer {{fB.response.body.token}}
+Content-Type: application/json
+
+{
+  "verificationCode": "{{fCert.response.body.verificationCode}}",
+  "code": "MALO-0002-AAAA"
+}
+
+### F31c. Fallo 3 (400)
+POST {{api}}/me/devices
+Authorization: Bearer {{fB.response.body.token}}
+Content-Type: application/json
+
+{
+  "verificationCode": "{{fCert.response.body.verificationCode}}",
+  "code": "MALO-0003-AAAA"
+}
+
+### F31d. Fallo 4 (400)
+POST {{api}}/me/devices
+Authorization: Bearer {{fB.response.body.token}}
+Content-Type: application/json
+
+{
+  "verificationCode": "{{fCert.response.body.verificationCode}}",
+  "code": "MALO-0004-AAAA"
+}
+
+### F31e. Fallo 5 (400, y se bloquea)
+POST {{api}}/me/devices
+Authorization: Bearer {{fB.response.body.token}}
+Content-Type: application/json
+
+{
+  "verificationCode": "{{fCert.response.body.verificationCode}}",
+  "code": "MALO-0005-AAAA"
+}
+
+### F31f. Bloqueado (429)
+POST {{api}}/me/devices
+Authorization: Bearer {{fB.response.body.token}}
+Content-Type: application/json
+
+{
+  "verificationCode": "{{fCert.response.body.verificationCode}}",
+  "code": "MALO-0006-AAAA"
+}

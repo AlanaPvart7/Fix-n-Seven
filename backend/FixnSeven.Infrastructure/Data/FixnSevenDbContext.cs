@@ -32,6 +32,10 @@ public class FixnSevenDbContext : DbContext
     public DbSet<CertificateGradeScale> CertificateGradeScales => Set<CertificateGradeScale>();
     public DbSet<Report> Reports => Set<Report>();
     public DbSet<ReportAttachment> ReportAttachments => Set<ReportAttachment>();
+    // Globales (sin EnterpriseId ni filtro): cuentas de compradores
+    public DbSet<CustomerAccount> CustomerAccounts => Set<CustomerAccount>();
+    public DbSet<CustomerDevice> CustomerDevices => Set<CustomerDevice>();
+    public DbSet<CustomerDeviceFile> CustomerDeviceFiles => Set<CustomerDeviceFile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
