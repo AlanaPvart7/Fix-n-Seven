@@ -2,6 +2,7 @@ using FixnSeven.Application.Common;
 using FixnSeven.Application.Common.Interfaces;
 using FixnSeven.Application.Features.Certificates.DTOs;
 using FixnSeven.Application.Features.Orders;
+using FixnSeven.Application.Features.Settings;
 using FixnSeven.Domain.Entities;
 namespace FixnSeven.Application.Features.Certificates;
 
@@ -12,10 +13,12 @@ public class CertificateService
     private readonly IOrderRepository _orders;
     private readonly IPasswordHasher _hasher;
     private readonly ICurrentTenant _tenant;
+    private readonly SettingsService _settings;
 
     public CertificateService(ICertificateRepository repository, IOrderRepository orders,
-        IPasswordHasher hasher, ICurrentTenant tenant)
+        IPasswordHasher hasher, ICurrentTenant tenant, SettingsService settings)
     {
+        _settings = settings;
         _repository = repository;
         _orders = orders;
         _hasher = hasher;
@@ -29,6 +32,12 @@ public class CertificateService
     {
         var enterpriseId = _tenant.EnterpriseId ?? throw new InvalidOperationException("No hay EnterpriseId en el token.");
         var employeeId = _tenant.EmployeeId ?? throw new InvalidOperationException("No hay EmployeeId en el token.");
+
+        // El puntaje tiene que caer en el rango del nivel, segun la escala de MI empresa
+        var level = (await _settings.GetEffectiveScaleAsync()).First(g => g.Grade == request.Grade);
+        if (request.Score < level.MinScore || request.Score > level.MaxScore)
+            return ServiceResult<CertificateResponseDto>.Fail(400,
+                $"El nivel {request.Grade} exige un puntaje de {level.MinScore} a {level.MaxScore}.");
 
         if (!await _repository.EquipmentExistsAsync(request.EquipmentId))
             return ServiceResult<CertificateResponseDto>.Fail(400, "El equipo no existe.");

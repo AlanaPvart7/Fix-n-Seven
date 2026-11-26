@@ -114,6 +114,38 @@ namespace FixnSeven.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FixnSeven.Domain.Entities.CertificateGradeScale", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Grade")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<int>("MaxScore")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinScore")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnterpriseId", "Grade")
+                        .IsUnique();
+
+                    b.ToTable("CertificateGradeScales", t =>
+                        {
+                            t.HasCheckConstraint("CK_GradeScale_Grade", "\"Grade\" IN ('Excelente','Bueno','Regular','Reprobado')");
+
+                            t.HasCheckConstraint("CK_GradeScale_Range", "\"MinScore\" >= 0 AND \"MaxScore\" <= 100 AND \"MinScore\" <= \"MaxScore\"");
+                        });
+                });
+
             modelBuilder.Entity("FixnSeven.Domain.Entities.Customer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -342,6 +374,54 @@ namespace FixnSeven.Infrastructure.Migrations
                     b.ToTable("EquipmentCategories", t =>
                         {
                             t.HasCheckConstraint("CK_EquipmentCategories_UsageUnit", "\"UsageUnit\" IN ('Fechas','Horas')");
+                        });
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<DateTime>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ReceivedByEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<Guid>("ServiceOrderId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("EnterpriseId", "Id");
+
+                    b.HasIndex("EnterpriseId", "PaidAt");
+
+                    b.HasIndex("EnterpriseId", "ReceivedByEmployeeId");
+
+                    b.HasIndex("EnterpriseId", "ServiceOrderId");
+
+                    b.ToTable("Payments", t =>
+                        {
+                            t.HasCheckConstraint("CK_Payments_Amount", "\"Amount\" > 0");
+
+                            t.HasCheckConstraint("CK_Payments_Method", "\"Method\" IN ('Efectivo','Tarjeta','Transferencia')");
                         });
                 });
 
@@ -609,6 +689,15 @@ namespace FixnSeven.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("FixnSeven.Domain.Entities.CertificateGradeScale", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FixnSeven.Domain.Entities.Customer", b =>
                 {
                     b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
@@ -675,6 +764,29 @@ namespace FixnSeven.Infrastructure.Migrations
                     b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
                         .WithMany()
                         .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.Payment", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "ReceivedByEmployeeId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.ServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "ServiceOrderId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

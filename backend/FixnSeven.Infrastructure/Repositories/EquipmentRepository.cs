@@ -27,6 +27,18 @@ public class EquipmentRepository : IEquipmentRepository
     public Task<bool> CategoryNameExistsAsync(string name) =>
         _context.EquipmentCategories.AnyAsync(c => c.Name.ToLower() == name.ToLower());
 
+    public Task<EquipmentCategory?> GetCategoryEntityAsync(Guid id) =>
+        _context.EquipmentCategories.FirstOrDefaultAsync(c => c.Id == id);
+
+    public Task<bool> CategoryNameExistsAsync(string name, Guid excludeId) =>
+        _context.EquipmentCategories.AnyAsync(c => c.Id != excludeId && c.Name.ToLower() == name.ToLower());
+
+    public async Task UpdateCategoryAsync(EquipmentCategory category)
+    {
+        _context.EquipmentCategories.Update(category);
+        await _context.SaveChangesAsync();
+    }
+
     public Task<bool> CategoryExistsAsync(Guid id) =>
         _context.EquipmentCategories.AnyAsync(c => c.Id == id);
 

@@ -122,9 +122,13 @@ public class OrderRepository : IOrderRepository
         var itemDtos = items.Select(i => new ServiceItemResponseDto(
             i.Id, i.Kind, i.Description, i.Quantity, i.UnitPrice, i.Quantity * i.UnitPrice)).ToList();
 
+        var total = itemDtos.Sum(i => i.Subtotal);
+        var paid = await _context.Payments.Where(p => p.ServiceOrderId == id)
+            .SumAsync(p => (decimal?)p.Amount) ?? 0m;
+
         return new OrderDetailResponseDto(
             order.Id, order.Status, equipment!, customerName, order.TechnicianId, technicianName,
             order.ReportedIssue, order.ReceivedCondition, order.WorkDone, order.Notes,
-            itemDtos, itemDtos.Sum(i => i.Subtotal), order.CreatedAt, order.ClosedAt);
+            itemDtos, total, paid, total - paid, order.CreatedAt, order.ClosedAt);
     }
 }

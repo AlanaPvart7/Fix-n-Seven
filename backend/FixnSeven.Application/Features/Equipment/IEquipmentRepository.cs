@@ -11,6 +11,9 @@ public interface IEquipmentRepository
     Task<bool> CategoryNameExistsAsync(string name);
     Task<bool> CategoryExistsAsync(Guid id);
     Task AddCategoryAsync(EquipmentCategory category);
+    Task<EquipmentCategory?> GetCategoryEntityAsync(Guid id);
+    Task<bool> CategoryNameExistsAsync(string name, Guid excludeId);
+    Task UpdateCategoryAsync(EquipmentCategory category);
 
     // Equipos
     Task<bool> CustomerExistsAsync(Guid customerId);

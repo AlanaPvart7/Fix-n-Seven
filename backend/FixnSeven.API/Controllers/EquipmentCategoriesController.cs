@@ -13,10 +13,13 @@ public class EquipmentCategoriesController : ControllerBase
     private readonly EquipmentService _service;
     private readonly IEquipmentRepository _repository;
     private readonly IValidator<CreateEquipmentCategoryRequestDto> _validator;
+    private readonly IValidator<UpdateEquipmentCategoryRequestDto> _updateValidator;
 
     public EquipmentCategoriesController(EquipmentService service, IEquipmentRepository repository,
-        IValidator<CreateEquipmentCategoryRequestDto> validator)
+        IValidator<CreateEquipmentCategoryRequestDto> validator,
+        IValidator<UpdateEquipmentCategoryRequestDto> updateValidator)
     {
+        _updateValidator = updateValidator;
         _service = service;
         _repository = repository;
         _validator = validator;
@@ -50,5 +53,19 @@ public class EquipmentCategoriesController : ControllerBase
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetCategory), new { id = result.Data!.Id }, result.Data)
             : Problem(detail: result.Error, statusCode: result.StatusCode);
+    }
+
+    // PUT /api/equipment-categories/{id}  (solo Admin)
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateEquipmentCategoryRequestDto request)
+    {
+        await _updateValidator.ValidateAndThrowAsync(request);
+        var result = await _service.UpdateCategoryAsync(id, request);
+        return result.IsSuccess ? NoContent() : Problem(detail: result.Error, statusCode: result.StatusCode);
     }
 }

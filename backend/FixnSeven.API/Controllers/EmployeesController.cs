@@ -14,10 +14,12 @@ public class EmployeesController : ControllerBase
     private readonly EmployeeService _service;
     private readonly IEmployeeRepository _repository;
     private readonly IValidator<CreateEmployeeRequestDto> _validator;
+    private readonly IValidator<UpdateEmployeeRequestDto> _updateValidator;
 
     public EmployeesController(EmployeeService service, IEmployeeRepository repository,
-        IValidator<CreateEmployeeRequestDto> validator)
+        IValidator<CreateEmployeeRequestDto> validator, IValidator<UpdateEmployeeRequestDto> updateValidator)
     {
+        _updateValidator = updateValidator;
         _service = service;
         _repository = repository;
         _validator = validator;
@@ -59,5 +61,19 @@ public class EmployeesController : ControllerBase
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetEmployee), new { id = result.Data!.Id }, result.Data)
             : Problem(detail: result.Error, statusCode: result.StatusCode);
+    }
+
+    // PUT /api/employees/{id}  (solo Admin: nombre y rol)
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateEmployee(Guid id, [FromBody] UpdateEmployeeRequestDto request)
+    {
+        await _updateValidator.ValidateAndThrowAsync(request);
+        var result = await _service.UpdateAsync(id, request);
+        return result.IsSuccess ? NoContent() : Problem(detail: result.Error, statusCode: result.StatusCode);
     }
 }

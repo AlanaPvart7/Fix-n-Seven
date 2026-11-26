@@ -10,4 +10,7 @@ public interface IEmployeeRepository
     Task AddAsync(Employee employee);
     Task<(List<EmployeeResponseDto> Items, int Total)> GetPagedAsync(string? role, int page, int pageSize);
     Task<EmployeeResponseDto?> GetByIdAsync(Guid id);
+    Task<Employee?> GetEntityAsync(Guid id);
+    Task<int> CountByRoleAsync(Guid roleId);
+    Task UpdateAsync(Employee employee);
 }

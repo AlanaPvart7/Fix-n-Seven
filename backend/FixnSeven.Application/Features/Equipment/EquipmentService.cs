@@ -28,6 +28,22 @@ public class EquipmentService
             new EquipmentCategoryResponseDto(category.Id, category.Name, category.IdentifierLabel, category.UsageUnit), 201);
     }
 
+    public async Task<ServiceResult<bool>> UpdateCategoryAsync(Guid id, UpdateEquipmentCategoryRequestDto request)
+    {
+        var category = await _repository.GetCategoryEntityAsync(id);
+        if (category is null) return ServiceResult<bool>.Fail(404, "La categoría no existe.");
+
+        var name = request.Name.Trim();
+        if (await _repository.CategoryNameExistsAsync(name, id))
+            return ServiceResult<bool>.Fail(409, "Ya existe una categoría con ese nombre.");
+
+        category.Name = name;
+        category.IdentifierLabel = request.IdentifierLabel.Trim();
+        category.UsageUnit = request.UsageUnit;
+        await _repository.UpdateCategoryAsync(category);
+        return ServiceResult<bool>.Ok(true, 204);
+    }
+
     public async Task<ServiceResult<EquipmentResponseDto>> CreateAsync(CreateEquipmentRequestDto request)
     {
         var error = await CheckReferencesAsync(request.CategoryId, request.CustomerId, request.Identifier.Trim(), null);

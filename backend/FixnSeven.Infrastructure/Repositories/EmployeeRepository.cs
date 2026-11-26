@@ -48,6 +48,18 @@ public class EmployeeRepository : IEmployeeRepository
         return (items, total);
     }
 
+    public Task<Employee?> GetEntityAsync(Guid id) =>
+        _context.Employees.FirstOrDefaultAsync(e => e.Id == id);
+
+    public Task<int> CountByRoleAsync(Guid roleId) =>
+        _context.Employees.CountAsync(e => e.RoleEmployeeId == roleId);
+
+    public async Task UpdateAsync(Employee employee)
+    {
+        _context.Employees.Update(employee);
+        await _context.SaveChangesAsync();
+    }
+
     public Task<EmployeeResponseDto?> GetByIdAsync(Guid id) =>
         (from e in _context.Employees
          join r in _context.RoleEmployees on e.RoleEmployeeId equals r.Id

@@ -19,15 +19,7 @@ public class IssueCertificateValidator : AbstractValidator<IssueCertificateReque
         RuleFor(x => x.Score)
             .InclusiveBetween(0, 100).WithMessage("El puntaje va de 0 a 100.");
 
-        // El puntaje tiene que caer en el rango del nivel (Bueno = 75 a 89, etc.)
-        RuleFor(x => x.Score)
-            .Must((dto, score) => CertificateGrades.Fits(dto.Grade, score))
-            .When(x => CertificateGrades.IsValid(x.Grade) && x.Score is >= 0 and <= 100)
-            .WithMessage(dto =>
-            {
-                var (min, max) = CertificateGrades.Range(dto.Grade);
-                return $"El nivel {dto.Grade} exige un puntaje de {min} a {max}.";
-            });
+        // El rango de cada nivel depende de la escala de la empresa: lo revisa CertificateService (400)
 
         RuleFor(x => x.Observations).MaximumLength(2000);
         RuleFor(x => x.PublicSummary).MaximumLength(500);

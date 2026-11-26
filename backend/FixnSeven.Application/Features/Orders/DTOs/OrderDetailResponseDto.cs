@@ -15,6 +15,8 @@ public record OrderDetailResponseDto(
     string? Notes,
     List<ServiceItemResponseDto> Items,
     decimal Total,                 // suma de los items, no se guarda
+    decimal Paid,                  // suma de los pagos (Fase 2), no se guarda
+    decimal Balance,               // Total - Paid, no se guarda
     DateTime CreatedAt,
     DateTime? ClosedAt,
     CertificateResponseDto? Certificate = null   // HU-14: el certificado que origino esta orden
