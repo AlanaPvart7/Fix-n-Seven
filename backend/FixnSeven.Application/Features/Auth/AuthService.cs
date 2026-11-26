@@ -20,6 +20,15 @@ public class AuthService
         _tokens = tokens;
     }
 
+    private static readonly (string Name, string IdentifierLabel, string UsageUnit)[] DefaultCategories =
+    {
+        ("Celular", "IMEI", "Fechas"),
+        ("Laptop", "N° de serie", "Fechas"),
+        ("Televisor", "N° de serie", "Fechas"),
+        ("Consola", "N° de serie", "Fechas"),
+        ("Impresora", "N° de serie o código de activo", "Horas")
+    };
+
     public async Task<AuthResult> RegisterEnterpriseAsync(RegisterEnterpriseRequestDto request)
     {
         var email = request.AdminEmail.Trim().ToLowerInvariant();
@@ -51,7 +60,16 @@ public class AuthService
             PasswordHash = _hasher.Hash(request.Password)
         };
 
-        await _repository.AddEnterpriseWithAdminAsync(enterprise, admin);   // una sola transaccion
+        // Categorias por defecto del rubro (la empresa luego puede agregar mas)
+        var categories = DefaultCategories.Select(c => new EquipmentCategory
+        {
+            EnterpriseId = enterprise.Id,
+            Name = c.Name,
+            IdentifierLabel = c.IdentifierLabel,
+            UsageUnit = c.UsageUnit
+        });
+
+        await _repository.AddEnterpriseWithAdminAsync(enterprise, admin, categories);   // una sola transaccion
 
         var (token, expiresAt) = _tokens.CreateToken(admin, "Admin");
         return AuthResult.Ok(new LoginResponseDto(token, expiresAt, "Admin", enterprise.Id), 201);

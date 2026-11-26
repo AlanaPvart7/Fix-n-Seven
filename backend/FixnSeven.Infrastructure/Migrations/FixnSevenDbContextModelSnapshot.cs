@@ -46,8 +46,6 @@ namespace FixnSeven.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("EnterpriseId", "Id");
-
                     b.ToTable("Customers");
                 });
 
@@ -176,6 +174,89 @@ namespace FixnSeven.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FixnSeven.Domain.Entities.Equipment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("CurrentUsage")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Identifier")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("EnterpriseId", "Id");
+
+                    b.HasIndex("EnterpriseId", "CategoryId");
+
+                    b.HasIndex("EnterpriseId", "CustomerId");
+
+                    b.HasIndex("EnterpriseId", "Identifier")
+                        .IsUnique();
+
+                    b.ToTable("Equipment", t =>
+                        {
+                            t.HasCheckConstraint("CK_Equipment_CurrentUsage", "\"CurrentUsage\" IS NULL OR \"CurrentUsage\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.EquipmentCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("IdentifierLabel")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("UsageUnit")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnterpriseId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("EquipmentCategories", t =>
+                        {
+                            t.HasCheckConstraint("CK_EquipmentCategories_UsageUnit", "\"UsageUnit\" IN ('Fechas','Horas')");
+                        });
+                });
+
             modelBuilder.Entity("FixnSeven.Domain.Entities.Plan", b =>
                 {
                     b.Property<Guid>("Id")
@@ -300,6 +381,37 @@ namespace FixnSeven.Infrastructure.Migrations
                     b.HasOne("FixnSeven.Domain.Entities.Plan", null)
                         .WithMany()
                         .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.Equipment", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.EquipmentCategory", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "CategoryId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "CustomerId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.EquipmentCategory", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

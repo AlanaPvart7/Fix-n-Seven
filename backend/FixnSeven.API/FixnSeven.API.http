@@ -269,3 +269,168 @@ Content-Type: application/json
 ### E10. El técnico intenta ver clientes (403)
 GET {{api}}/customers
 Authorization: Bearer {{loginTec.response.body.token}}
+
+### ===== HU-06/07: CATEGORIAS Y EQUIPOS (ejecutar despues de la A4) =====
+
+### K1. Registrar empresa nueva: trae 5 categorias por defecto (201)
+# @name registro3
+POST {{api}}/enterprises/register
+Content-Type: application/json
+
+{
+  "enterpriseName": "Celulares Express",
+  "enterpriseTypeId": "0192f000-0000-7000-8000-000000000101",
+  "planId": "0192f000-0000-7000-8000-000000000201",
+  "adminFullName": "Admin Tres",
+  "adminEmail": "admin@celularesexpress.com",
+  "password": "Admin1234"
+}
+
+### K2. Categorias de la empresa nueva: Celular, Consola, Impresora, Laptop, Televisor (200)
+GET {{api}}/equipment-categories
+Authorization: Bearer {{registro3.response.body.token}}
+
+### K3. El Admin de Taller El Rapido crea la categoria Celular (201)
+# @name categoria
+POST {{api}}/equipment-categories
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Celular",
+  "identifierLabel": "IMEI",
+  "usageUnit": "Fechas"
+}
+
+### K4. Categoria repetida (409)
+POST {{api}}/equipment-categories
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "celular",
+  "identifierLabel": "IMEI",
+  "usageUnit": "Fechas"
+}
+
+### K5. Medida de uso invalida (400)
+POST {{api}}/equipment-categories
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Drones",
+  "identifierLabel": "N° de serie",
+  "usageUnit": "Kilometros"
+}
+
+### Q1. Cliente para los equipos (201)
+# @name clienteEq
+POST {{api}}/customers
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "fullName": "Luis Hernández",
+  "phone": "3333-4444",
+  "email": "luis@correo.com"
+}
+
+### Q2. Registrar equipo con cliente (201) — HU-06
+# @name equipo
+POST {{api}}/equipment
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "customerId": "{{clienteEq.response.body.id}}",
+  "categoryId": "{{categoria.response.body.id}}",
+  "identifier": "356789012345678",
+  "brand": "Samsung",
+  "model": "Galaxy A54"
+}
+
+### Q3. Mismo IMEI en la misma empresa (409)
+POST {{api}}/equipment
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{categoria.response.body.id}}",
+  "identifier": "356789012345678",
+  "brand": "Samsung",
+  "model": "Galaxy A54"
+}
+
+### Q4. Equipo propio, sin cliente (201)
+POST {{api}}/equipment
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{categoria.response.body.id}}",
+  "identifier": "359999000111222",
+  "brand": "Apple",
+  "model": "iPhone 13"
+}
+
+### Q5. Categoria que no existe (400)
+POST {{api}}/equipment
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "categoryId": "0192f000-0000-7000-8000-000000000999",
+  "identifier": "350000000000000",
+  "brand": "Xiaomi",
+  "model": "Redmi 12"
+}
+
+### Q6. Buscar por IMEI (200)
+GET {{api}}/equipment?identifier=3567
+Authorization: Bearer {{login.response.body.token}}
+
+### Q7. Equipos de un cliente (200)
+GET {{api}}/equipment?customerId={{clienteEq.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### Q8. Equipo por Id (200)
+GET {{api}}/equipment/{{equipo.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### Q9. Editar el equipo (204)
+PUT {{api}}/equipment/{{equipo.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "customerId": "{{clienteEq.response.body.id}}",
+  "categoryId": "{{categoria.response.body.id}}",
+  "identifier": "356789012345678",
+  "brand": "Samsung",
+  "model": "Galaxy A54 5G"
+}
+
+### Q10. La empresa 3 busca el IMEI de Taller El Rapido: no lo ve (200, total 0)
+GET {{api}}/equipment?identifier=3567
+Authorization: Bearer {{registro3.response.body.token}}
+
+### Q11. Otra empresa pide el equipo de Taller El Rapido (404)
+GET {{api}}/equipment/{{equipo.response.body.id}}
+Authorization: Bearer {{registro3.response.body.token}}
+
+### Q12. El tecnico ve el equipo (200)
+GET {{api}}/equipment/{{equipo.response.body.id}}
+Authorization: Bearer {{loginTec.response.body.token}}
+
+### Q13. El tecnico intenta registrar un equipo (403)
+POST {{api}}/equipment
+Authorization: Bearer {{loginTec.response.body.token}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{categoria.response.body.id}}",
+  "identifier": "351111111111111",
+  "brand": "Motorola",
+  "model": "G84"
+}

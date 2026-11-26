@@ -22,6 +22,8 @@ public class FixnSevenDbContext : DbContext
     public DbSet<Enterprise> Enterprises => Set<Enterprise>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<EquipmentCategory> EquipmentCategories => Set<EquipmentCategory>();
+    public DbSet<Equipment> Equipment => Set<Equipment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -32,6 +34,8 @@ public class FixnSevenDbContext : DbContext
         // Agreguen una linea por cada tabla nueva que herede de TenantEntity.
         modelBuilder.Entity<Customer>().HasQueryFilter(x => x.EnterpriseId == CurrentEnterpriseId);
         modelBuilder.Entity<Employee>().HasQueryFilter(x => x.EnterpriseId == CurrentEnterpriseId);
+        modelBuilder.Entity<EquipmentCategory>().HasQueryFilter(x => x.EnterpriseId == CurrentEnterpriseId);
+        modelBuilder.Entity<Equipment>().HasQueryFilter(x => x.EnterpriseId == CurrentEnterpriseId);
     }
 
     // Al guardar: el EnterpriseId lo pone el sistema (desde el token) y nunca se puede cambiar

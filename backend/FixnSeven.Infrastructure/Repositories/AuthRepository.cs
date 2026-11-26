@@ -19,10 +19,11 @@ public class AuthRepository : IAuthRepository
     public Task<bool> PlanExistsAsync(Guid id) =>
         _context.Plans.AnyAsync(p => p.Id == id);
 
-    public async Task AddEnterpriseWithAdminAsync(Enterprise enterprise, Employee admin)
+    public async Task AddEnterpriseWithAdminAsync(Enterprise enterprise, Employee admin, IEnumerable<EquipmentCategory> categories)
     {
         _context.Enterprises.Add(enterprise);
         _context.Employees.Add(admin);
+        _context.EquipmentCategories.AddRange(categories);
         await _context.SaveChangesAsync();   // las dos filas se guardan juntas o ninguna
     }
 
