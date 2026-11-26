@@ -1,3 +1,4 @@
+using FixnSeven.Application.Features.Certificates.DTOs;
 using FixnSeven.Application.Features.Equipment.DTOs;
 namespace FixnSeven.Application.Features.Orders.DTOs;
 
@@ -15,5 +16,6 @@ public record OrderDetailResponseDto(
     List<ServiceItemResponseDto> Items,
     decimal Total,                 // suma de los items, no se guarda
     DateTime CreatedAt,
-    DateTime? ClosedAt
+    DateTime? ClosedAt,
+    CertificateResponseDto? Certificate = null   // HU-14: el certificado que origino esta orden
 );

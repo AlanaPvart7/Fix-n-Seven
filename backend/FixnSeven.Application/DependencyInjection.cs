@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using FixnSeven.Application.Features.Auth;
+using FixnSeven.Application.Features.Certificates;
 using FixnSeven.Application.Features.Employees;
 using FixnSeven.Application.Features.Equipment;
 using FixnSeven.Application.Features.Orders;
@@ -19,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<EmployeeService>();
         services.AddScoped<EquipmentService>();
         services.AddScoped<OrderService>();
+        services.AddScoped<CertificateService>();
         return services;
     }
 }

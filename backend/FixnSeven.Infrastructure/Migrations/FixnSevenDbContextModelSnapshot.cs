@@ -22,6 +22,98 @@ namespace FixnSeven.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("FixnSeven.Domain.Entities.Certificate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EquipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Grade")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Observations")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("OwnerCodeHash")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PublicSummary")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("RevocationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ServiceOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<Guid>("TechnicianId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("VerificationCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("EnterpriseId", "Id");
+
+                    b.HasIndex("EquipmentId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Vigente'");
+
+                    b.HasIndex("VerificationCode")
+                        .IsUnique();
+
+                    b.HasIndex("EnterpriseId", "EquipmentId");
+
+                    b.HasIndex("EnterpriseId", "ServiceOrderId");
+
+                    b.HasIndex("EnterpriseId", "TechnicianId");
+
+                    b.ToTable("Certificates", t =>
+                        {
+                            t.HasCheckConstraint("CK_Certificates_Expires", "\"ExpiresAt\" > \"IssuedAt\"");
+
+                            t.HasCheckConstraint("CK_Certificates_Grade", "\"Grade\" IN ('Excelente','Bueno','Regular','Reprobado')");
+
+                            t.HasCheckConstraint("CK_Certificates_Revoked", "(\"Status\" = 'Revocado') = (\"RevokedAt\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_Certificates_Score", "\"Score\" BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("CK_Certificates_Status", "\"Status\" IN ('Vigente','Revocado')");
+                        });
+                });
+
             modelBuilder.Entity("FixnSeven.Domain.Entities.Customer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -445,6 +537,35 @@ namespace FixnSeven.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_ServiceOrders_Status", "\"Status\" IN ('Recibida','EnProceso','Cerrada')");
                         });
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.Certificate", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "EquipmentId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.ServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "ServiceOrderId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FixnSeven.Domain.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "TechnicianId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("FixnSeven.Domain.Entities.Customer", b =>

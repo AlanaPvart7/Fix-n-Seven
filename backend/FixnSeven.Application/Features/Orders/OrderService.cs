@@ -1,5 +1,6 @@
 using FixnSeven.Application.Common;
 using FixnSeven.Application.Common.Interfaces;
+using FixnSeven.Application.Features.Certificates;
 using FixnSeven.Application.Features.Orders.DTOs;
 using FixnSeven.Domain.Entities;
 namespace FixnSeven.Application.Features.Orders;
@@ -9,11 +10,13 @@ public class OrderService
 {
     private readonly IOrderRepository _repository;
     private readonly ICurrentTenant _tenant;
+    private readonly ICertificateRepository _certificates;
 
-    public OrderService(IOrderRepository repository, ICurrentTenant tenant)
+    public OrderService(IOrderRepository repository, ICurrentTenant tenant, ICertificateRepository certificates)
     {
         _repository = repository;
         _tenant = tenant;
+        _certificates = certificates;
     }
 
     private bool IsTechnician => _tenant.Role == "Technician";
@@ -131,6 +134,6 @@ public class OrderService
         var detail = await _repository.GetDetailAsync(id);
         if (detail is null) return null;
         if (IsTechnician && detail.TechnicianId != _tenant.EmployeeId) return null;   // para el, "no existe"
-        return detail;
+        return detail with { Certificate = await _certificates.GetLatestByOrderAsync(id) };
     }
 }

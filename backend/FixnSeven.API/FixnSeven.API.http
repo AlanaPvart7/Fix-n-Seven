@@ -595,3 +595,198 @@ Content-Type: application/json
 ### O17. Otra empresa pide la orden (404)
 GET {{api}}/orders/{{orden.response.body.id}}
 Authorization: Bearer {{login3.response.body.token}}
+
+### ===== HU-14/15/16: CERTIFICADOS (bloque independiente: trae sus propios logins) =====
+
+### C0a. Login Admin de Taller El Rapido (200)
+# @name cAdmin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@elrapido.com",
+  "password": "Admin1234"
+}
+
+### C0b. Login del tecnico Tomas (200)
+# @name cTec
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "tomas@elrapido.com",
+  "password": "Tecnico123"
+}
+
+### C0c. Login de la recepcionista Rosa (200)
+# @name cRec
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "rosa@elrapido.com",
+  "password": "Recepcion1"
+}
+
+### C0d. Login de otra empresa: Celulares Express (200)
+# @name cOtra
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@celularesexpress.com",
+  "password": "Admin1234"
+}
+
+### C1. El Samsung de Luis (200)
+# @name cEquipo
+GET {{api}}/equipment?identifier=3567
+Authorization: Bearer {{cAdmin.response.body.token}}
+
+### C2. Ordenes cerradas del tecnico (200)
+# @name cOrdenes
+GET {{api}}/orders?status=Cerrada
+Authorization: Bearer {{cTec.response.body.token}}
+
+### C3. Nivel y puntaje no coinciden: Bueno con 95 (400)
+POST {{api}}/certificates
+Authorization: Bearer {{cTec.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{cEquipo.response.body.$.items[0].id}}",
+  "serviceOrderId": "{{cOrdenes.response.body.$.items[0].id}}",
+  "grade": "Bueno",
+  "score": 95
+}
+
+### C4. El tecnico certifica SIN orden (403) — regla 7
+POST {{api}}/certificates
+Authorization: Bearer {{cTec.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{cEquipo.response.body.$.items[0].id}}",
+  "grade": "Excelente",
+  "score": 95
+}
+
+### C5. Recepcion intenta emitir (403)
+POST {{api}}/certificates
+Authorization: Bearer {{cRec.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{cEquipo.response.body.$.items[0].id}}",
+  "grade": "Excelente",
+  "score": 95
+}
+
+### C6. El tecnico emite el certificado de SU orden (201, trae ownerCode UNA vez) — HU-14
+# @name cert
+POST {{api}}/certificates
+Authorization: Bearer {{cTec.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{cEquipo.response.body.$.items[0].id}}",
+  "serviceOrderId": "{{cOrdenes.response.body.$.items[0].id}}",
+  "grade": "Excelente",
+  "score": 95,
+  "observations": "Se cambio el puerto de carga. Bateria al 91%.",
+  "publicSummary": "Puerto de carga nuevo. Bateria en buen estado."
+}
+
+### C7. Emitir otro con uno vigente (409)
+POST {{api}}/certificates
+Authorization: Bearer {{cAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{cEquipo.response.body.$.items[0].id}}",
+  "grade": "Bueno",
+  "score": 80
+}
+
+### C8. Ver el certificado (200, ownerCode ya es null)
+GET {{api}}/certificates/{{cert.response.body.id}}
+Authorization: Bearer {{cRec.response.body.token}}
+
+### C9. Consulta PUBLICA por QR, SIN token (200, identificador ****5678, sin datos del dueno) — HU-16
+GET {{api}}/public/certificates/{{cert.response.body.verificationCode}}
+
+### C10. Codigo que no existe (404)
+GET {{api}}/public/certificates/NOEXISTE99
+
+### C11. Detalle del equipo con su certificado vigente (200)
+GET {{api}}/equipment/{{cEquipo.response.body.$.items[0].id}}
+Authorization: Bearer {{cAdmin.response.body.token}}
+
+### C12. Detalle de la orden con su certificado (200)
+GET {{api}}/orders/{{cOrdenes.response.body.$.items[0].id}}
+Authorization: Bearer {{cTec.response.body.token}}
+
+### C13. Otra empresa intenta revocarlo (404)
+PUT {{api}}/certificates/{{cert.response.body.id}}/revoke
+Authorization: Bearer {{cOtra.response.body.token}}
+Content-Type: application/json
+
+{
+  "reason": "No es mio pero lo intento"
+}
+
+### C14. Revocar sin motivo (400)
+PUT {{api}}/certificates/{{cert.response.body.id}}/revoke
+Authorization: Bearer {{cTec.response.body.token}}
+Content-Type: application/json
+
+{
+  "reason": ""
+}
+
+### C15. El tecnico revoca SU certificado (204) — HU-15
+PUT {{api}}/certificates/{{cert.response.body.id}}/revoke
+Authorization: Bearer {{cTec.response.body.token}}
+Content-Type: application/json
+
+{
+  "reason": "Se detecto falla en el microfono despues de certificar"
+}
+
+### C16. Revocar otra vez (409)
+PUT {{api}}/certificates/{{cert.response.body.id}}/revoke
+Authorization: Bearer {{cTec.response.body.token}}
+Content-Type: application/json
+
+{
+  "reason": "Otra vez"
+}
+
+### C17. La consulta publica ahora dice Revocado (200)
+GET {{api}}/public/certificates/{{cert.response.body.verificationCode}}
+
+### C18. El Admin emite uno nuevo Reprobado, sin orden (201 con advertencia)
+# @name cert2
+POST {{api}}/certificates
+Authorization: Bearer {{cAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{cEquipo.response.body.$.items[0].id}}",
+  "grade": "Reprobado",
+  "score": 40,
+  "observations": "Microfono sin funcionar"
+}
+
+### C19. Historial de certificados del equipo (200: el nuevo y el revocado)
+GET {{api}}/equipment/{{cEquipo.response.body.$.items[0].id}}/certificates
+Authorization: Bearer {{cTec.response.body.token}}
+
+### C20. Limpieza: el Admin revoca el Reprobado para poder repetir las pruebas (204)
+PUT {{api}}/certificates/{{cert2.response.body.id}}/revoke
+Authorization: Bearer {{cAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "reason": "Fin de las pruebas"
+}

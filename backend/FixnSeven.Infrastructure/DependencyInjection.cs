@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using FixnSeven.Application.Common.Interfaces;
 using FixnSeven.Application.Features.Auth;
+using FixnSeven.Application.Features.Certificates;
 using FixnSeven.Application.Features.Customers;
 using FixnSeven.Application.Features.Employees;
 using FixnSeven.Application.Features.Equipment;
@@ -27,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<IEquipmentRepository, EquipmentRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<ICertificateRepository, CertificateRepository>();
 
         // 3. Seguridad: contrasenas con BCrypt
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();

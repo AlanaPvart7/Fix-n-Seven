@@ -2,6 +2,8 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FixnSeven.Application.Common.DTOs;
+using FixnSeven.Application.Features.Certificates;
+using FixnSeven.Application.Features.Certificates.DTOs;
 using FixnSeven.Application.Features.Equipment;
 using FixnSeven.Application.Features.Equipment.DTOs;
 using FixnSeven.Application.Features.Orders;
@@ -17,12 +19,14 @@ public class EquipmentController : ControllerBase
     private readonly IValidator<CreateEquipmentRequestDto> _createValidator;
     private readonly IValidator<UpdateEquipmentRequestDto> _updateValidator;
     private readonly IOrderRepository _orders;
+    private readonly ICertificateRepository _certificates;
 
     public EquipmentController(EquipmentService service, IEquipmentRepository repository,
         IValidator<CreateEquipmentRequestDto> createValidator, IValidator<UpdateEquipmentRequestDto> updateValidator,
-        IOrderRepository orders)
+        IOrderRepository orders, ICertificateRepository certificates)
     {
         _orders = orders;
+        _certificates = certificates;
         _service = service;
         _repository = repository;
         _createValidator = createValidator;
@@ -52,7 +56,19 @@ public class EquipmentController : ControllerBase
 
         // HU-07: historial de ordenes del equipo
         var orders = await _orders.GetByEquipmentAsync(id);
-        return Ok(new EquipmentDetailResponseDto(equipment, orders));
+        var certificate = await _certificates.GetActiveByEquipmentAsync(id);
+        return Ok(new EquipmentDetailResponseDto(equipment, orders, certificate));
+    }
+
+    // GET /api/equipment/{id}/certificates  (historial: vigentes, vencidos y revocados)
+    [Authorize(Roles = "Admin,Reception,Technician")]
+    [HttpGet("{id:guid}/certificates")]
+    [ProducesResponseType<List<CertificateResponseDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetEquipmentCertificates(Guid id)
+    {
+        if (await _repository.GetByIdAsync(id) is null) return NotFound();
+        return Ok(await _certificates.GetByEquipmentAsync(id));
     }
 
     // POST /api/equipment  (HU-06)
