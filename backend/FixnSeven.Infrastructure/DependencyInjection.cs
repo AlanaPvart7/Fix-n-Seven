@@ -11,9 +11,11 @@ using FixnSeven.Application.Features.Orders.Pdf;
 using FixnSeven.Application.Features.Reminders;
 using FixnSeven.Application.Features.Settings;
 using FixnSeven.Application.Features.Income;
+using FixnSeven.Application.Features.Reports;
 using FixnSeven.Application.Features.Enterprises;
 using FixnSeven.Infrastructure.Data;
 using FixnSeven.Infrastructure.Pdf;
+using FixnSeven.Infrastructure.Storage;
 using FixnSeven.Infrastructure.Repositories;
 using FixnSeven.Infrastructure.Security;
 
@@ -21,7 +23,8 @@ namespace FixnSeven.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string connectionString,
+        string storagePath = "storage")
     {
         // 1. Conexión a PostgreSQL
         services.AddDbContext<FixnSevenDbContext>(options => options.UseNpgsql(connectionString));
@@ -38,6 +41,10 @@ public static class DependencyInjection
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<ISettingsRepository, SettingsRepository>();
         services.AddScoped<IIncomeRepository, IncomeRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
+
+        // Archivos de prueba de los reportes: carpeta privada (no se sirve por URL)
+        services.AddSingleton<IFileStorage>(new LocalFileStorage(storagePath));
 
         // PDF de la orden (QuestPDF + QRCoder)
         services.AddSingleton<IOrderPdfGenerator, QuestOrderPdfGenerator>();

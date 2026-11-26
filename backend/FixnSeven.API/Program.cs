@@ -17,7 +17,9 @@ var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Po
     ?? throw new InvalidOperationException("Falta la cadena de conexión en el .env");
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(connectionString);   // base de datos + repositorios
+var storagePath = builder.Configuration["Storage:Path"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "storage");
+builder.Services.AddInfrastructure(connectionString, storagePath);   // base de datos + repositorios + archivos
 // JWT: valida el token que manda el frontend en cada peticion
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("Falta Jwt__Key en el .env");

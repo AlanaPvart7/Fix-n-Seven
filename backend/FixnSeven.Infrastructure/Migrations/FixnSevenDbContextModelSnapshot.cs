@@ -85,8 +85,6 @@ namespace FixnSeven.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("EnterpriseId", "Id");
-
                     b.HasIndex("EquipmentId")
                         .IsUnique()
                         .HasFilter("\"Status\" = 'Vigente'");
@@ -476,6 +474,150 @@ namespace FixnSeven.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FixnSeven.Domain.Entities.Report", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CertificateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("character varying(25)");
+
+                    b.Property<string>("ReporterEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<Guid?>("ReporterEnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReporterName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("ReporterPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("ReporterType")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<string>("Resolution")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedByEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<string>("TrackingCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CertificateId");
+
+                    b.HasIndex("ReporterEnterpriseId");
+
+                    b.HasIndex("TrackingCode")
+                        .IsUnique();
+
+                    b.HasIndex("EnterpriseId", "CertificateId");
+
+                    b.HasIndex("EnterpriseId", "ResolvedByEmployeeId");
+
+                    b.HasIndex("EnterpriseId", "Status");
+
+                    b.HasIndex("ReporterEmail", "CreatedAt");
+
+                    b.ToTable("Reports", t =>
+                        {
+                            t.HasCheckConstraint("CK_Reports_Reason", "\"Reason\" IN ('EstadoDistinto','NivelIncorrecto','DatosErroneos','PosibleFalsificacion','Otro')");
+
+                            t.HasCheckConstraint("CK_Reports_ReporterType", "\"ReporterType\" IN ('Cliente','Distribuidor')");
+
+                            t.HasCheckConstraint("CK_Reports_Resolved", "(\"Status\" IN ('Aceptado','Rechazado')) = (\"ResolvedAt\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_Reports_Status", "\"Status\" IN ('Recibido','EnRevision','Aceptado','Rechazado')");
+                        });
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.ReportAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FileKind")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("ReportId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnterpriseId", "ReportId");
+
+                    b.ToTable("ReportAttachments", t =>
+                        {
+                            t.HasCheckConstraint("CK_ReportAttachments_Kind", "\"FileKind\" IN ('Foto','PDF','Video','Documento')");
+
+                            t.HasCheckConstraint("CK_ReportAttachments_Size", "\"SizeBytes\" > 0");
+                        });
+                });
+
             modelBuilder.Entity("FixnSeven.Domain.Entities.RoleEmployee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -788,6 +930,49 @@ namespace FixnSeven.Infrastructure.Migrations
                         .HasForeignKey("EnterpriseId", "ServiceOrderId")
                         .HasPrincipalKey("EnterpriseId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.Report", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("ReporterEnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FixnSeven.Domain.Entities.Certificate", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "CertificateId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "ResolvedByEmployeeId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.ReportAttachment", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.Report", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "ReportId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

@@ -1263,3 +1263,282 @@ Content-Type: application/json
     { "grade": "Reprobado", "minScore": 0,  "maxScore": 59 }
   ]
 }
+
+### ===== FASE 2 (bloque E): REPORTES DE CERTIFICADOS INCORRECTOS =====
+### Necesita un certificado VIGENTE en el Samsung (si no hay, correr C6 primero).
+### E20 lo revoca; E25d prueba el limite de 3 reportes por dia del mismo correo.
+
+### E0a. Login Admin (200)
+# @name eAdmin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@elrapido.com",
+  "password": "Admin1234"
+}
+
+### E0b. Login tecnico, quien emitio el certificado (200)
+# @name eTec
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "tomas@elrapido.com",
+  "password": "Tecnico123"
+}
+
+### E0c. Login de otra empresa: Celulares Express (200)
+# @name eOtra
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@celularesexpress.com",
+  "password": "Admin1234"
+}
+
+### E1. El Samsung (200)
+# @name eEquipo
+GET {{api}}/equipment?identifier=3567
+Authorization: Bearer {{eAdmin.response.body.token}}
+
+### E1b. Su certificado vigente (200: activeCertificate con status Vigente)
+# @name eDetalle
+GET {{api}}/equipment/{{eEquipo.response.body.$.items[0].id}}
+Authorization: Bearer {{eAdmin.response.body.token}}
+
+### --- Publico, SIN token ---
+
+### E2. Motivo invalido y descripcion corta (400)
+POST {{api}}/public/certificates/{{eDetalle.response.body.activeCertificate.verificationCode}}/reports
+Content-Type: application/json
+
+{
+  "reason": "NoMeGusto",
+  "description": "Esta mal",
+  "reporterName": "Mario",
+  "reporterEmail": "no-es-correo"
+}
+
+### E3. Un comprador reporta el certificado (201, Cliente, trae el trackingCode)
+# @name rep
+POST {{api}}/public/certificates/{{eDetalle.response.body.activeCertificate.verificationCode}}/reports
+Content-Type: application/json
+
+{
+  "reason": "EstadoDistinto",
+  "description": "Compre el telefono y el microfono no funciona, pero el certificado dice Excelente.",
+  "reporterName": "Mario Comprador",
+  "reporterEmail": "mario{{$randomInt 1000 9999}}@correo.com",
+  "reporterPhone": "9999-0000"
+}
+
+### E4. Certificado que no existe (404)
+POST {{api}}/public/certificates/NOEXISTE99/reports
+Content-Type: application/json
+
+{
+  "reason": "Otro",
+  "description": "Este certificado no aparece en ningun lado.",
+  "reporterName": "Mario",
+  "reporterEmail": "mario@correo.com"
+}
+
+### E5. Adjuntar una foto PNG (201, Foto)
+POST {{api}}/public/reports/{{rep.response.body.trackingCode}}/attachments
+Content-Type: multipart/form-data; boundary=FixBoundary
+
+--FixBoundary
+Content-Disposition: form-data; name="file"; filename="foto-equipo.png"
+Content-Type: image/png
+
+< ./test-files/foto-equipo.png
+--FixBoundary--
+
+### E6. Ejecutable disfrazado de .png (400: el tipo real no coincide)
+POST {{api}}/public/reports/{{rep.response.body.trackingCode}}/attachments
+Content-Type: multipart/form-data; boundary=FixBoundary
+
+--FixBoundary
+Content-Disposition: form-data; name="file"; filename="virus-disfrazado.png"
+Content-Type: image/png
+
+< ./test-files/virus-disfrazado.png
+--FixBoundary--
+
+### E7. Adjuntar una nota .txt (201, Documento)
+POST {{api}}/public/reports/{{rep.response.body.trackingCode}}/attachments
+Content-Type: multipart/form-data; boundary=FixBoundary
+
+--FixBoundary
+Content-Disposition: form-data; name="file"; filename="nota.txt"
+Content-Type: text/plain
+
+< ./test-files/nota.txt
+--FixBoundary--
+
+### E8. Estado publico del reporte (200: Recibido, 2 archivos)
+GET {{api}}/public/reports/{{rep.response.body.trackingCode}}
+
+### E9. Otra empresa reporta CON su sesion (201, Distribuidor)
+# @name rep2
+POST {{api}}/public/certificates/{{eDetalle.response.body.activeCertificate.verificationCode}}/reports
+Authorization: Bearer {{eOtra.response.body.token}}
+Content-Type: application/json
+
+{
+  "reason": "NivelIncorrecto",
+  "description": "Lo recibimos para revender y la bateria esta al 70 por ciento, no es Excelente.",
+  "reporterName": "Celulares Express",
+  "reporterEmail": "compras{{$randomInt 1000 9999}}@celularesexpress.com"
+}
+
+### --- La empresa que emitio el certificado ---
+
+### E10. El Admin ve sus reportes (200: los 2, uno Cliente y uno Distribuidor)
+GET {{api}}/reports?status=Recibido
+Authorization: Bearer {{eAdmin.response.body.token}}
+
+### E11. Detalle del reporte con sus pruebas (200)
+# @name repDet
+GET {{api}}/reports/{{rep.response.body.id}}
+Authorization: Bearer {{eAdmin.response.body.token}}
+
+### E12. Descargar la foto (200, image/png)
+GET {{api}}/reports/{{rep.response.body.id}}/attachments/{{repDet.response.body.$.attachments[0].id}}
+Authorization: Bearer {{eAdmin.response.body.token}}
+
+### E13. El tecnico ve el reporte de SU certificado (200)
+GET {{api}}/reports/{{rep.response.body.id}}
+Authorization: Bearer {{eTec.response.body.token}}
+
+### E14. Otra empresa pide el reporte (404)
+GET {{api}}/reports/{{rep.response.body.id}}
+Authorization: Bearer {{eOtra.response.body.token}}
+
+### E15. Pasar a En revision (204)
+PUT {{api}}/reports/{{rep.response.body.id}}/review
+Authorization: Bearer {{eAdmin.response.body.token}}
+
+### E16. Pasar a En revision otra vez (409)
+PUT {{api}}/reports/{{rep.response.body.id}}/review
+Authorization: Bearer {{eAdmin.response.body.token}}
+
+### E17. Rechazar Y revocar a la vez (400)
+PUT {{api}}/reports/{{rep.response.body.id}}/resolve
+Authorization: Bearer {{eAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "decision": "Rechazado",
+  "resolution": "No procede el reporte.",
+  "revokeCertificate": true
+}
+
+### E18. El tecnico intenta resolver (403)
+PUT {{api}}/reports/{{rep.response.body.id}}/resolve
+Authorization: Bearer {{eTec.response.body.token}}
+Content-Type: application/json
+
+{
+  "decision": "Rechazado",
+  "resolution": "Yo lo revise y estaba bien.",
+  "revokeCertificate": false
+}
+
+### E19. Rechazar el reporte del distribuidor (204)
+PUT {{api}}/reports/{{rep2.response.body.id}}/resolve
+Authorization: Bearer {{eAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "decision": "Rechazado",
+  "resolution": "La bateria al 70 por ciento esta dentro del rango Excelente de nuestra escala.",
+  "revokeCertificate": false
+}
+
+### E20. Aceptar el del comprador y revocar el certificado (204)
+PUT {{api}}/reports/{{rep.response.body.id}}/resolve
+Authorization: Bearer {{eAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "decision": "Aceptado",
+  "resolution": "Revisamos las pruebas: el microfono falla. Revocamos el certificado.",
+  "revokeCertificate": true
+}
+
+### E21. Resolver otra vez (409)
+PUT {{api}}/reports/{{rep.response.body.id}}/resolve
+Authorization: Bearer {{eAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "decision": "Rechazado",
+  "resolution": "Cambie de opinion sobre esto.",
+  "revokeCertificate": false
+}
+
+### E22. El comprador consulta su reporte (200: Aceptado, con la explicacion)
+GET {{api}}/public/reports/{{rep.response.body.trackingCode}}
+
+### E23. La consulta publica del certificado ahora dice Revocado (200)
+GET {{api}}/public/certificates/{{eDetalle.response.body.activeCertificate.verificationCode}}
+
+### E24. Adjuntar a un reporte ya resuelto (409)
+POST {{api}}/public/reports/{{rep.response.body.trackingCode}}/attachments
+Content-Type: multipart/form-data; boundary=FixBoundary
+
+--FixBoundary
+Content-Disposition: form-data; name="file"; filename="nota.txt"
+Content-Type: text/plain
+
+< ./test-files/nota.txt
+--FixBoundary--
+
+### --- Limite de 3 reportes por dia del mismo correo ---
+
+### E25a. Reporte 1 de spam@correo.com (201)
+POST {{api}}/public/certificates/{{eDetalle.response.body.activeCertificate.verificationCode}}/reports
+Content-Type: application/json
+
+{
+  "reason": "Otro",
+  "description": "Prueba de limite de reportes por correo numero uno.",
+  "reporterName": "Spam",
+  "reporterEmail": "spam@correo.com"
+}
+
+### E25b. Reporte 2 (201)
+POST {{api}}/public/certificates/{{eDetalle.response.body.activeCertificate.verificationCode}}/reports
+Content-Type: application/json
+
+{
+  "reason": "Otro",
+  "description": "Prueba de limite de reportes por correo numero dos.",
+  "reporterName": "Spam",
+  "reporterEmail": "spam@correo.com"
+}
+
+### E25c. Reporte 3 (201)
+POST {{api}}/public/certificates/{{eDetalle.response.body.activeCertificate.verificationCode}}/reports
+Content-Type: application/json
+
+{
+  "reason": "Otro",
+  "description": "Prueba de limite de reportes por correo numero tres.",
+  "reporterName": "Spam",
+  "reporterEmail": "spam@correo.com"
+}
+
+### E25d. Reporte 4 del mismo correo (429)
+POST {{api}}/public/certificates/{{eDetalle.response.body.activeCertificate.verificationCode}}/reports
+Content-Type: application/json
+
+{
+  "reason": "Otro",
+  "description": "Prueba de limite de reportes por correo numero cuatro.",
+  "reporterName": "Spam",
+  "reporterEmail": "spam@correo.com"
+}

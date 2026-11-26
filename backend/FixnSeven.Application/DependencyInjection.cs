@@ -8,6 +8,7 @@ using FixnSeven.Application.Features.Orders;
 using FixnSeven.Application.Features.Reminders;
 using FixnSeven.Application.Features.Settings;
 using FixnSeven.Application.Features.Income;
+using FixnSeven.Application.Features.Reports;
 
 namespace FixnSeven.Application;
 
@@ -28,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<PaymentService>();
         services.AddScoped<SettingsService>();
         services.AddScoped<IncomeService>();
+        services.AddScoped<ReportService>();
         return services;
     }
 }
