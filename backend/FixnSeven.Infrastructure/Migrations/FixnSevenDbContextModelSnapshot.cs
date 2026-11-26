@@ -80,8 +80,6 @@ namespace FixnSeven.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("EnterpriseId", "Id");
-
                     b.HasIndex("Email")
                         .IsUnique();
 
@@ -207,8 +205,6 @@ namespace FixnSeven.Infrastructure.Migrations
                         .HasColumnType("character varying(60)");
 
                     b.HasKey("Id");
-
-                    b.HasAlternateKey("EnterpriseId", "Id");
 
                     b.HasIndex("EnterpriseId", "CategoryId");
 
@@ -346,6 +342,111 @@ namespace FixnSeven.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FixnSeven.Domain.Entities.ServiceItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ServiceOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnterpriseId", "ServiceOrderId");
+
+                    b.ToTable("ServiceItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_ServiceItems_Kind", "\"Kind\" IN ('Trabajo','Repuesto')");
+
+                            t.HasCheckConstraint("CK_ServiceItems_Quantity", "\"Quantity\" > 0");
+
+                            t.HasCheckConstraint("CK_ServiceItems_UnitPrice", "\"UnitPrice\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.ServiceOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EquipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("ReceivedCondition")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ReportedIssue")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
+
+                    b.Property<Guid?>("TechnicianId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("WorkDone")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnterpriseId", "CustomerId");
+
+                    b.HasIndex("EnterpriseId", "EquipmentId");
+
+                    b.HasIndex("EnterpriseId", "TechnicianId");
+
+                    b.HasIndex("EnterpriseId", "Status", "CreatedAt");
+
+                    b.ToTable("ServiceOrders", t =>
+                        {
+                            t.HasCheckConstraint("CK_ServiceOrders_ClosedAt", "(\"Status\" = 'Cerrada') = (\"ClosedAt\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_ServiceOrders_Status", "\"Status\" IN ('Recibida','EnProceso','Cerrada')");
+                        });
+                });
+
             modelBuilder.Entity("FixnSeven.Domain.Entities.Customer", b =>
                 {
                     b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
@@ -414,6 +515,50 @@ namespace FixnSeven.Infrastructure.Migrations
                         .HasForeignKey("EnterpriseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.ServiceItem", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.ServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "ServiceOrderId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.ServiceOrder", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "CustomerId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FixnSeven.Domain.Entities.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "EquipmentId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "TechnicianId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 #pragma warning restore 612, 618
         }

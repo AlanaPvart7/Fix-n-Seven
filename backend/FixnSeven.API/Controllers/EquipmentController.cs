@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using FixnSeven.Application.Common.DTOs;
 using FixnSeven.Application.Features.Equipment;
 using FixnSeven.Application.Features.Equipment.DTOs;
+using FixnSeven.Application.Features.Orders;
 namespace FixnSeven.API.Controllers;
 
 [ApiController]
@@ -15,10 +16,13 @@ public class EquipmentController : ControllerBase
     private readonly IEquipmentRepository _repository;
     private readonly IValidator<CreateEquipmentRequestDto> _createValidator;
     private readonly IValidator<UpdateEquipmentRequestDto> _updateValidator;
+    private readonly IOrderRepository _orders;
 
     public EquipmentController(EquipmentService service, IEquipmentRepository repository,
-        IValidator<CreateEquipmentRequestDto> createValidator, IValidator<UpdateEquipmentRequestDto> updateValidator)
+        IValidator<CreateEquipmentRequestDto> createValidator, IValidator<UpdateEquipmentRequestDto> updateValidator,
+        IOrderRepository orders)
     {
+        _orders = orders;
         _service = service;
         _repository = repository;
         _createValidator = createValidator;
@@ -39,12 +43,16 @@ public class EquipmentController : ControllerBase
     // GET /api/equipment/{id}  (el tecnico tambien lo ve)
     [Authorize(Roles = "Admin,Reception,Technician")]
     [HttpGet("{id:guid}")]
-    [ProducesResponseType<EquipmentResponseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<EquipmentDetailResponseDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetEquipmentById(Guid id)
     {
         var equipment = await _repository.GetByIdAsync(id);
-        return equipment is null ? NotFound() : Ok(equipment);
+        if (equipment is null) return NotFound();
+
+        // HU-07: historial de ordenes del equipo
+        var orders = await _orders.GetByEquipmentAsync(id);
+        return Ok(new EquipmentDetailResponseDto(equipment, orders));
     }
 
     // POST /api/equipment  (HU-06)

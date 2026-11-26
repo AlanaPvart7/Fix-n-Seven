@@ -5,4 +5,5 @@ public interface ICurrentTenant
 {
     Guid? EnterpriseId { get; }
     Guid? EmployeeId { get; }
+    string? Role { get; }          // Admin, Reception o Technician
 }

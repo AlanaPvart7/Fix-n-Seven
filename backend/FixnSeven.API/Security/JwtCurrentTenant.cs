@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FixnSeven.Application.Common.Interfaces;
 namespace FixnSeven.API.Security;
 
@@ -11,4 +12,5 @@ public class JwtCurrentTenant : ICurrentTenant
 
     public Guid? EnterpriseId => ReadClaim("enterprise_id");
     public Guid? EmployeeId => ReadClaim("employee_id");
+    public string? Role => _accessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
 }
