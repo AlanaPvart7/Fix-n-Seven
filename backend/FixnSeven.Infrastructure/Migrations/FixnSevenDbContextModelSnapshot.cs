@@ -539,6 +539,47 @@ namespace FixnSeven.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FixnSeven.Domain.Entities.ServiceReminder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<int?>("DueUsage")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("EnterpriseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EquipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("EnterpriseId", "Id");
+
+                    b.HasIndex("EnterpriseId", "DueDate");
+
+                    b.HasIndex("EnterpriseId", "EquipmentId");
+
+                    b.ToTable("ServiceReminders", t =>
+                        {
+                            t.HasCheckConstraint("CK_ServiceReminders_Due", "\"DueDate\" IS NOT NULL OR \"DueUsage\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_ServiceReminders_DueUsage", "\"DueUsage\" IS NULL OR \"DueUsage\" > 0");
+                        });
+                });
+
             modelBuilder.Entity("FixnSeven.Domain.Entities.Certificate", b =>
                 {
                     b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
@@ -680,6 +721,22 @@ namespace FixnSeven.Infrastructure.Migrations
                         .HasForeignKey("EnterpriseId", "TechnicianId")
                         .HasPrincipalKey("EnterpriseId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("FixnSeven.Domain.Entities.ServiceReminder", b =>
+                {
+                    b.HasOne("FixnSeven.Domain.Entities.Enterprise", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixnSeven.Domain.Entities.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId", "EquipmentId")
+                        .HasPrincipalKey("EnterpriseId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

@@ -8,6 +8,7 @@ public interface IOrderRepository
     Task<bool> TechnicianExistsAsync(Guid employeeId);        // empleado con rol Technician de mi empresa
     Task<int> CountOrdersSinceAsync(DateTime sinceUtc);
     Task<int?> GetPlanMaxMonthlyOrdersAsync(Guid enterpriseId);
+    Task<string> GetEnterpriseNameAsync(Guid enterpriseId);
 
     Task AddAsync(ServiceOrder order);
     Task<ServiceOrder?> GetEntityAsync(Guid id);

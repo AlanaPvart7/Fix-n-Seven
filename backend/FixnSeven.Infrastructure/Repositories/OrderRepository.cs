@@ -37,6 +37,10 @@ public class OrderRepository : IOrderRepository
          where e.Id == enterpriseId
          select p.MaxMonthlyOrders).FirstOrDefaultAsync();
 
+    public async Task<string> GetEnterpriseNameAsync(Guid enterpriseId) =>
+        await _context.Enterprises.Where(e => e.Id == enterpriseId)
+            .Select(e => e.Name).FirstOrDefaultAsync() ?? string.Empty;
+
     public async Task AddAsync(ServiceOrder order)
     {
         await _context.ServiceOrders.AddAsync(order);

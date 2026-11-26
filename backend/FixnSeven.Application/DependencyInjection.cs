@@ -5,6 +5,7 @@ using FixnSeven.Application.Features.Certificates;
 using FixnSeven.Application.Features.Employees;
 using FixnSeven.Application.Features.Equipment;
 using FixnSeven.Application.Features.Orders;
+using FixnSeven.Application.Features.Reminders;
 
 namespace FixnSeven.Application;
 
@@ -21,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<EquipmentService>();
         services.AddScoped<OrderService>();
         services.AddScoped<CertificateService>();
+        services.AddScoped<ReminderService>();
         return services;
     }
 }

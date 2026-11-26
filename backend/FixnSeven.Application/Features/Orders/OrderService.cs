@@ -2,6 +2,7 @@ using FixnSeven.Application.Common;
 using FixnSeven.Application.Common.Interfaces;
 using FixnSeven.Application.Features.Certificates;
 using FixnSeven.Application.Features.Orders.DTOs;
+using FixnSeven.Application.Features.Orders.Pdf;
 using FixnSeven.Domain.Entities;
 namespace FixnSeven.Application.Features.Orders;
 
@@ -11,12 +12,15 @@ public class OrderService
     private readonly IOrderRepository _repository;
     private readonly ICurrentTenant _tenant;
     private readonly ICertificateRepository _certificates;
+    private readonly IOrderPdfGenerator _pdf;
 
-    public OrderService(IOrderRepository repository, ICurrentTenant tenant, ICertificateRepository certificates)
+    public OrderService(IOrderRepository repository, ICurrentTenant tenant, ICertificateRepository certificates,
+        IOrderPdfGenerator pdf)
     {
         _repository = repository;
         _tenant = tenant;
         _certificates = certificates;
+        _pdf = pdf;
     }
 
     private bool IsTechnician => _tenant.Role == "Technician";
@@ -135,5 +139,20 @@ public class OrderService
         if (detail is null) return null;
         if (IsTechnician && detail.TechnicianId != _tenant.EmployeeId) return null;   // para el, "no existe"
         return detail with { Certificate = await _certificates.GetLatestByOrderAsync(id) };
+    }
+
+    // ---------- HU-12: PDF de la orden ----------
+    // publicVerifyBaseUrl: pagina publica del frontend, por ejemplo http://localhost:5173/verificar
+    public async Task<byte[]?> GetPdfAsync(Guid id, string publicVerifyBaseUrl)
+    {
+        var detail = await GetDetailAsync(id);          // mismas reglas: el tecnico solo las suyas
+        if (detail is null) return null;
+
+        var enterpriseName = await _repository.GetEnterpriseNameAsync(_tenant.EnterpriseId!.Value);
+        var verifyUrl = detail.Certificate is null
+            ? null
+            : $"{publicVerifyBaseUrl.TrimEnd('/')}/{detail.Certificate.VerificationCode}";
+
+        return _pdf.Generate(new OrderPdfModel(enterpriseName, detail, verifyUrl));
     }
 }

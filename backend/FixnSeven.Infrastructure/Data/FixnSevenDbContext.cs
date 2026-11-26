@@ -27,6 +27,7 @@ public class FixnSevenDbContext : DbContext
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
     public DbSet<ServiceItem> ServiceItems => Set<ServiceItem>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
+    public DbSet<ServiceReminder> ServiceReminders => Set<ServiceReminder>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,6 +43,7 @@ public class FixnSevenDbContext : DbContext
         modelBuilder.Entity<ServiceOrder>().HasQueryFilter(x => x.EnterpriseId == CurrentEnterpriseId);
         modelBuilder.Entity<ServiceItem>().HasQueryFilter(x => x.EnterpriseId == CurrentEnterpriseId);
         modelBuilder.Entity<Certificate>().HasQueryFilter(x => x.EnterpriseId == CurrentEnterpriseId);
+        modelBuilder.Entity<ServiceReminder>().HasQueryFilter(x => x.EnterpriseId == CurrentEnterpriseId);
     }
 
     // Al guardar: el EnterpriseId lo pone el sistema (desde el token) y nunca se puede cambiar

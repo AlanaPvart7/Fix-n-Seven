@@ -790,3 +790,145 @@ Content-Type: application/json
 {
   "reason": "Fin de las pruebas"
 }
+
+### ===== HU-12 y HU-17: PDF DE LA ORDEN Y RECORDATORIOS (bloque independiente) =====
+
+### R0a. Login Admin (200)
+# @name rAdmin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@elrapido.com",
+  "password": "Admin1234"
+}
+
+### R0b. Login tecnico (200)
+# @name rTec
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "tomas@elrapido.com",
+  "password": "Tecnico123"
+}
+
+### R0c. Login otra empresa (200)
+# @name rOtra
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@celularesexpress.com",
+  "password": "Admin1234"
+}
+
+### R1. El Samsung de Luis (200)
+# @name rEquipo
+GET {{api}}/equipment?identifier=3567
+Authorization: Bearer {{rAdmin.response.body.token}}
+
+### R2. Orden cerrada (200)
+# @name rOrden
+GET {{api}}/orders?status=Cerrada
+Authorization: Bearer {{rAdmin.response.body.token}}
+
+### R3. PDF de la orden (200, application/pdf) — HU-12
+GET {{api}}/orders/{{rOrden.response.body.$.items[0].id}}/pdf
+Authorization: Bearer {{rAdmin.response.body.token}}
+
+### R4. PDF de una orden que no existe (404)
+GET {{api}}/orders/0192f000-0000-7000-8000-000000000999/pdf
+Authorization: Bearer {{rAdmin.response.body.token}}
+
+### R5. Otra empresa pide el PDF (404)
+GET {{api}}/orders/{{rOrden.response.body.$.items[0].id}}/pdf
+Authorization: Bearer {{rOtra.response.body.token}}
+
+### R6. Recordatorio por fecha, en 10 dias (201) — HU-17
+# @name recordatorio
+POST {{api}}/reminders
+Authorization: Bearer {{rAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{rEquipo.response.body.$.items[0].id}}",
+  "reason": "Vence la garantia de la reparacion",
+  "dueDate": "{{$datetime 'YYYY-MM-DD' 10 d}}"
+}
+
+### R7. Fecha en el pasado (400)
+POST {{api}}/reminders
+Authorization: Bearer {{rAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{rEquipo.response.body.$.items[0].id}}",
+  "reason": "Ya paso",
+  "dueDate": "{{$datetime 'YYYY-MM-DD' -5 d}}"
+}
+
+### R8. Sin fecha ni horas de uso (400)
+POST {{api}}/reminders
+Authorization: Bearer {{rAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{rEquipo.response.body.$.items[0].id}}",
+  "reason": "Sin fecha"
+}
+
+### R9. Recordatorio por horas de uso (201)
+# @name recordatorioHoras
+POST {{api}}/reminders
+Authorization: Bearer {{rAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "{{rEquipo.response.body.$.items[0].id}}",
+  "reason": "Mantenimiento a las 500 horas",
+  "dueUsage": 500
+}
+
+### R10. Equipo que no existe (400)
+POST {{api}}/reminders
+Authorization: Bearer {{rAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "equipmentId": "0192f000-0000-7000-8000-000000000999",
+  "reason": "No existe",
+  "dueDate": "{{$datetime 'YYYY-MM-DD' 3 d}}"
+}
+
+### R11. Proximos 30 dias: aparece el de 10 dias (200)
+GET {{api}}/reminders/upcoming?days=30
+Authorization: Bearer {{rAdmin.response.body.token}}
+
+### R12. Proximos 5 dias: NO aparece (200, lista sin ese)
+GET {{api}}/reminders/upcoming?days=5
+Authorization: Bearer {{rAdmin.response.body.token}}
+
+### R13. Ver un recordatorio (200)
+GET {{api}}/reminders/{{recordatorio.response.body.id}}
+Authorization: Bearer {{rAdmin.response.body.token}}
+
+### R14. El tecnico no ve recordatorios (403)
+GET {{api}}/reminders/upcoming
+Authorization: Bearer {{rTec.response.body.token}}
+
+### R15. Otra empresa pide el recordatorio (404)
+GET {{api}}/reminders/{{recordatorio.response.body.id}}
+Authorization: Bearer {{rOtra.response.body.token}}
+
+### R16. Borrar: ya se llamo al cliente (204)
+DELETE {{api}}/reminders/{{recordatorio.response.body.id}}
+Authorization: Bearer {{rAdmin.response.body.token}}
+
+### R17. Borrar otra vez (404)
+DELETE {{api}}/reminders/{{recordatorio.response.body.id}}
+Authorization: Bearer {{rAdmin.response.body.token}}
+
+### R18. Limpieza: borrar el de horas (204)
+DELETE {{api}}/reminders/{{recordatorioHoras.response.body.id}}
+Authorization: Bearer {{rAdmin.response.body.token}}

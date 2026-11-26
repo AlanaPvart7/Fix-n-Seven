@@ -7,8 +7,11 @@ using FixnSeven.Application.Features.Customers;
 using FixnSeven.Application.Features.Employees;
 using FixnSeven.Application.Features.Equipment;
 using FixnSeven.Application.Features.Orders;
+using FixnSeven.Application.Features.Orders.Pdf;
+using FixnSeven.Application.Features.Reminders;
 using FixnSeven.Application.Features.Enterprises;
 using FixnSeven.Infrastructure.Data;
+using FixnSeven.Infrastructure.Pdf;
 using FixnSeven.Infrastructure.Repositories;
 using FixnSeven.Infrastructure.Security;
 
@@ -29,6 +32,10 @@ public static class DependencyInjection
         services.AddScoped<IEquipmentRepository, EquipmentRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ICertificateRepository, CertificateRepository>();
+        services.AddScoped<IReminderRepository, ReminderRepository>();
+
+        // PDF de la orden (QuestPDF + QRCoder)
+        services.AddSingleton<IOrderPdfGenerator, QuestOrderPdfGenerator>();
 
         // 3. Seguridad: contrasenas con BCrypt
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();

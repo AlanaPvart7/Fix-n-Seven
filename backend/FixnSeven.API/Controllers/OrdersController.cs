@@ -16,14 +16,16 @@ public class OrdersController : ControllerBase
     private readonly IValidator<AssignTechnicianRequestDto> _assignValidator;
     private readonly IValidator<AddServiceItemRequestDto> _itemValidator;
     private readonly IValidator<CloseOrderRequestDto> _closeValidator;
+    private readonly IConfiguration _configuration;
 
-    public OrdersController(OrderService service,
+    public OrdersController(OrderService service, IConfiguration configuration,
         IValidator<CreateOrderRequestDto> createValidator,
         IValidator<AssignTechnicianRequestDto> assignValidator,
         IValidator<AddServiceItemRequestDto> itemValidator,
         IValidator<CloseOrderRequestDto> closeValidator)
     {
         _service = service;
+        _configuration = configuration;
         _createValidator = createValidator;
         _assignValidator = assignValidator;
         _itemValidator = itemValidator;
@@ -108,5 +110,18 @@ public class OrdersController : ControllerBase
         await _closeValidator.ValidateAndThrowAsync(request);
         var result = await _service.CloseAsync(id, request);
         return result.IsSuccess ? NoContent() : Problem(detail: result.Error, statusCode: result.StatusCode);
+    }
+
+    // GET /api/orders/{id}/pdf  (HU-12) — con el QR del certificado si lo tiene
+    [Authorize(Roles = "Admin,Reception,Technician")]
+    [HttpGet("{id:guid}/pdf")]
+    [Produces("application/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetOrderPdf(Guid id)
+    {
+        var verifyBaseUrl = _configuration["App:PublicVerifyUrl"] ?? "http://localhost:5173/verificar";
+        var pdf = await _service.GetPdfAsync(id, verifyBaseUrl);
+        return pdf is null ? NotFound() : File(pdf, "application/pdf", $"orden-{id.ToString()[^8..]}.pdf");
     }
 }
