@@ -26,8 +26,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
-        var validation = await _validator.ValidateAsync(request);
-        if (!validation.IsValid) return BadRequest(validation.Errors);
+        await _validator.ValidateAndThrowAsync(request);   // si falla, el middleware responde 400
 
         var result = await _authService.LoginAsync(request);
         return result.Data is not null

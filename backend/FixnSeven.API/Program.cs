@@ -2,6 +2,7 @@ using System.Text;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using FixnSeven.API.Middleware;
 using FixnSeven.API.Security;
 using FixnSeven.Application.Common.Interfaces;
 using FixnSeven.Infrastructure;
@@ -39,10 +40,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<ITokenService, JwtTokenService>();
 
+// Tenant actual: lee enterprise_id del token en cada peticion
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentTenant, JwtCurrentTenant>();
+
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();   // primero: atrapa los errores de todo lo que sigue
 
 if (app.Environment.IsDevelopment())
 {

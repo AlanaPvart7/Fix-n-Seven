@@ -27,8 +27,7 @@ public class EnterprisesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterEnterpriseRequestDto request)
     {
-        var validation = await _validator.ValidateAsync(request);
-        if (!validation.IsValid) return BadRequest(validation.Errors);
+        await _validator.ValidateAndThrowAsync(request);   // si falla, el middleware responde 400
 
         var result = await _authService.RegisterEnterpriseAsync(request);
         return result.Data is not null

@@ -13,9 +13,6 @@ namespace FixnSeven.API.Controllers;
 [Authorize(Roles = "Admin,Reception")]   // sin token: 401, rol Technician: 403
 public class CustomersController : ControllerBase
 {
-    // TEMPORAL: en el paso 8 sale del token JWT.
-    private static readonly Guid EmpresaPrueba = Guid.Parse("0192f000-0000-7000-8000-00000000a001");
-
     private readonly ICustomerRepository _repository;
     private readonly IValidator<CreateCustomerRequestDto> _createValidator;
     private readonly IValidator<UpdateCustomerRequestDto> _updateValidator;
@@ -58,17 +55,15 @@ public class CustomersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerRequestDto request)
     {
-        var result = await _createValidator.ValidateAsync(request);
-        if (!result.IsValid)
-            return BadRequest(result.Errors);   // 400 con la lista de errores
+        await _createValidator.ValidateAndThrowAsync(request);   // si falla, el middleware responde 400
 
         // Mapeo manual: DTO -> Entidad (solo lo permitido)
         var customer = new Customer
         {
             FullName = request.FullName,
             Phone = request.Phone,
-            Email = request.Email,
-            EnterpriseId = EmpresaPrueba
+            Email = request.Email
+            // EnterpriseId: lo asigna SaveChanges desde el token
         };
 
         var created = await _repository.AddAsync(customer);
@@ -82,9 +77,7 @@ public class CustomersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateCustomer(Guid id, [FromBody] UpdateCustomerRequestDto request)
     {
-        var result = await _updateValidator.ValidateAsync(request);
-        if (!result.IsValid)
-            return BadRequest(result.Errors);
+        await _updateValidator.ValidateAndThrowAsync(request);
 
         var customer = await _repository.GetByIdAsync(id);
         if (customer is null)

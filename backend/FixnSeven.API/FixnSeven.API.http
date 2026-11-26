@@ -134,3 +134,37 @@ Content-Type: application/json
   "phone": "8888-2222",
   "email": "esto-no-es-correo"
 }
+
+### ===== HU-04: aislamiento entre empresas (ejecutar despues de la 5) =====
+
+### B1. Registrar una SEGUNDA empresa (201)
+# @name registro2
+POST {{api}}/enterprises/register
+Content-Type: application/json
+
+{
+  "enterpriseName": "Distribuidora Segunda Mano",
+  "enterpriseTypeId": "0192f000-0000-7000-8000-000000000102",
+  "planId": "0192f000-0000-7000-8000-000000000202",
+  "adminFullName": "Admin Dos",
+  "adminEmail": "admin@segundamano.com",
+  "password": "Admin1234"
+}
+
+### B1b. Login de la empresa 2 (200) — funciona aunque la B1 haya dado 409
+# @name login2
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@segundamano.com",
+  "password": "Admin1234"
+}
+
+### B2. La empresa 2 lista sus clientes: no ve los de la empresa 1 (200, total 0)
+GET {{api}}/customers
+Authorization: Bearer {{login2.response.body.token}}
+
+### B3. La empresa 2 pide un cliente de la empresa 1 por su Id (404)
+GET {{api}}/customers/{{crear.response.body.id}}
+Authorization: Bearer {{login2.response.body.token}}
